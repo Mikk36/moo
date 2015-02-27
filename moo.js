@@ -70,6 +70,7 @@ function Moo() {
   var net = require("net");
   self.socket = new net.Socket();
   self.socket.setTimeout(self.config("silenceTimeout") * 1000, function() {
+    util.log("Silence timeout hit, destroying socket");
     self.socket.destroy();
   });
   
