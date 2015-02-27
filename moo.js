@@ -69,7 +69,9 @@ function Moo() {
   // Set up IRC socket
   var net = require("net");
   self.socket = new net.Socket();
-  self.socket.setTimeout(self.config("silenceTimeout") * 1000);
+  self.socket.setTimeout(self.config("silenceTimeout") * 1000, function() {
+    self.socket.destroy();
+  });
   
   // Connection established
   self.socket.on("connect", function() {
