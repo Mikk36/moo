@@ -24,12 +24,12 @@ function Calculator(parent) {
       } catch(e) {
         result = e.message;
       }
-      self.parent.privmsgCommand(to, result);
+      self.parent.privmsgCommand(to, "" + result);
     } else if(lineVars.text[0] === "=") {
       try {
         var mathString = lineVars.text.substr(1);
         var result = math.eval(mathString);
-        self.parent.privmsgCommand(to, result);
+        self.parent.privmsgCommand(to, "" + result);
       } catch(e) {
       }
     }
