@@ -24,10 +24,11 @@ var options = {
   httpPort:             38080,
   httpDefaultLogAmount: 100,
   httpLogAmountLimit:   5000,
-  googleUserIP:         "publicIP" //for google requests,
+  googleUserIP:         "publicIP", //for google requests,
   adminUsers:           ["yourNick"],
   bingAuth:             "key",
-  wolframAuth:          "key"
+  wolframAuth:          "key",
+  googleAuth:           "key" // https://code.google.com/apis/console
 };
 
 exports.getOption= function(name) {
