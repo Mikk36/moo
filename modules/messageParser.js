@@ -1,7 +1,7 @@
 /*
  MessageParser
 
- @author Mikk Kiilasp�� <mikk36@mikk36.eu>
+ @author Mikk Kiilaspää <mikk36@mikk36.eu>
  */
 var events = require("events");
 var util = require("util");
