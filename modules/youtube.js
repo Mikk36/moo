@@ -5,14 +5,15 @@
  */
 var https = require("https");
 
-module.exports = Youtube;
+class Youtube {
+  constructor(moo) {
+    this.moo = moo;
 
-function Youtube(parent) {
-  var self = this;
-  self.parent = parent;
-  self.config = parent.config;
+    this.moo.parser.on("privMsg", this.messageHandler.bind(this));
+  }
 
-  parent.parser.on("privMsg", function (lineVars) {
+  messageHandler(lineVars) {
+    var self = this;
     var regExp = /http(s?):\/\/(?:youtu\.be\/|(?:[a-z]{2,3}\.)?youtube\.com\/watch(?:\?|#\!)(v=|[A-Za-z0-9_=]*&v=))([\w-]{11}).*/gi;
     var matches = lineVars.text.match(regExp);
     if (matches !== null) {
@@ -27,26 +28,28 @@ function Youtube(parent) {
           matchedID = matches2[0]
         }
         https.get("https://www.googleapis.com/youtube/v3/videos?part=id,snippet,contentDetails&id="
-        + matchedID + "&key=" + self.config("googleAuth"), function (res) {
+          + matchedID + "&key=" + Moo.config("googleAuth"), function (res) {
           var body = "";
           res.on("data", function (chunk) {
             body += chunk;
           });
           res.on("end", function () {
-            result = JSON.parse(body);
+            var result = JSON.parse(body);
             var message = "";
             var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
             if (result.error !== undefined) {
               message += "YouTube error: " + result.error.message;
             } else {
               message += "YouTube video: \"" + result.items[0].snippet.title + "\""
-              + " length: " + result.items[0].contentDetails.duration.substr(2).toLowerCase()
-              + " by: " + result.items[0].snippet.channelTitle;
+                + " length: " + result.items[0].contentDetails.duration.substr(2).toLowerCase()
+                + " by: " + result.items[0].snippet.channelTitle;
             }
-            self.parent.privmsgCommand(to, message);
+            self.moo.privmsgCommand(to, message);
           });
         });
       }
     }
-  });
+  }
 }
+
+module.exports = Youtube;

@@ -1,56 +1,42 @@
 /*
-  Calculator module
-  
-  @author Mikk Kiilaspää <mikk36@mikk36.eu>
-*/
+ Calculator module
+
+ @author Mikk Kiilaspää <mikk36@mikk36.eu>
+ */
 var util = require("util");
-//var http = require("http");
+var BaseModule = require("./baseModule");
 var math = require('mathjs');
 
-module.exports = Calculator;
+class Calculator extends BaseModule {
+  constructor(moo) {
+    super();
+    this.moo = moo;
 
-function Calculator(parent) {
-  var self = this;
-  self.parent = parent;
-  
-  parent.parser.on("privMsg", function(lineVars) {
+    this.moo.parser.on("privMsg", this.messageHandler.bind(this));
+  }
+
+  messageHandler(lineVars) {
     var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
-    var input = self.explode(lineVars.text, " ", 2);
-    
-    if(input[0] === "!calc") {
-      var result = "";
+    var input = Calculator.explode(lineVars.text, " ", 2);
+
+    var result;
+    if (input[0] === "!calc") {
+      result = "";
       try {
         result = math.eval(input[1]);
-      } catch(e) {
+      } catch (e) {
         result = e.message;
       }
-      self.parent.privmsgCommand(to, "" + result);
-    } else if(lineVars.text[0] === "=") {
+      this.moo.privmsgCommand(to, "" + result);
+    } else if (lineVars.text[0] === "=") {
       try {
         var mathString = lineVars.text.substr(1);
-        var result = math.eval(mathString);
-        self.parent.privmsgCommand(to, "" + result);
-      } catch(e) {
+        result = math.eval(mathString);
+        this.moo.privmsgCommand(to, "" + result);
+      } catch (e) {
       }
     }
-    // else {
-    //  try {
-    //    var result = math.eval(lineVars.text);
-    //    self.parent.privmsgCommand(to, result);
-    //  } catch(e) {
-    //  }
-    //  
-    //}
-  });
-  
-  self.explode = function(input, delimiter, limit) {
-    var s = input.split( delimiter );
-    if (limit > 0) {
-      if (limit >= s.length) {
-        return s;
-      }
-      return s.slice(0, limit - 1).concat([s.slice(limit - 1).join(delimiter)]);
-    }
-    return s;
-  };
+  }
 }
+
+module.exports = Calculator;

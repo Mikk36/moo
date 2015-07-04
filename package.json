@@ -1,23 +1,25 @@
 {
-  name:             "Moo",
-  description:      "IRC Bot written in Node.JS",
-  author:           "Mikk Kiilaspää <mikk36@mikk36.eu>",
-  scripts: {
-    start:          "node moo.js"
+  "name": "Moo",
+  "description": "IRC Bot written in Node.JS",
+  "author": "Mikk Kiilaspää <mikk36@mikk36.eu>",
+  "license": "MIT",
+  "scripts": {
+    "start": "node moo.js"
   },
-  repository: {
-    type:           "git",
-    url:            "https://github.com/Mikk36/moo.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mikk36/moo.git"
   },
-  bugs: {
-    url:            "https://github.com/Mikk36/moo/issues"
+  "bugs": {
+    "url": "https://github.com/Mikk36/moo/issues"
   },
-  dependencies: {
-    "entities":     "0.3.x",
-    "escape-html":  "1.x",
-    "iconv-lite":   "0.2.x",
-    "mathjs":       "0.25.x",
-    "mysql":        "2.x",
+  "dependencies": {
+    "entities": "^1.1.1",
+    "escape-html": "^1.0.2",
+    "iconv-lite": "^0.4.11",
+    "mathjs": "^1.7.0",
+    "mongodb": "^2.0.35",
+    "mysql": "^2.7.0",
     "node-wolfram": "0.0.1"
   }
 }

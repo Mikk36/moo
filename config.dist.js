@@ -1,7 +1,7 @@
 /*
   Configuration
-  
-  @author Mikk Kiilasp‰‰ <mikk36@mikk36.eu>
+
+ @author Mikk Kiilasp√§√§ <mikk36@mikk36.eu>
 */
 
 var options = {
@@ -20,6 +20,7 @@ var options = {
   sqlUser:              "username",
   sqlPass:              "password",
   sqlDB:                "databaseName",
+  mongoDB: "mongodb://localhost:27017/database",
   silenceTimeout:       300,
   httpPort:             38080,
   httpDefaultLogAmount: 100,
