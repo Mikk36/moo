@@ -61,6 +61,7 @@ class Notify extends BaseModule {
     collection.insert({
       from: from,
       to: to,
+      toInsensitive: to.toLowerCase(),
       message: message,
       time: time,
       processed: false
@@ -73,7 +74,7 @@ class Notify extends BaseModule {
       var collection = self.db.collection(self.config.notifyCollection);
       //noinspection JSDeprecatedSymbols,JSCheckFunctionSignatures
       collection.find({
-        to: nick,
+        toInsensitive: nick.toLowerCase(),
         processed: false
       }).sort({time: 1}).toArray(function (err, documents) {
         if (err) {
