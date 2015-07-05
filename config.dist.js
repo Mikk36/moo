@@ -4,7 +4,7 @@
  @author Mikk Kiilaspää <mikk36@mikk36.eu>
 */
 
-var options = {
+var config = {
   nick:                 "nickname",
   ident:                "someIdent",
   ircRealName:          "Moo the Cow",
@@ -29,18 +29,16 @@ var options = {
   adminUsers:           ["yourNick"],
   bingAuth:             "key",
   wolframAuth:          "key",
-  googleAuth:           "key" // https://code.google.com/apis/console
+  googleAuth: "key", // https://code.google.com/apis/console
+  notifyCollection: "notify"
 };
 
-exports.getOption= function(name) {
-  if(typeof name != "string") {
-    return new Error("Option name must be a string");
+for (var key in config) {
+  if (config.hasOwnProperty(key)) {
+    Object.defineProperty(config, key, {
+      writable: false
+    });
   }
-  if(name.length == 0) {
-    return new Error("Option name must not be empty");
-  }
-  if(options.hasOwnProperty(name) == false) {
-    return new Error("Option not defined");
-  }
-  return options[name];
-};
+}
+
+module.exports = config;

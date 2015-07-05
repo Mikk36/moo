@@ -2,8 +2,9 @@
  * Created by Mikk on 5.07.2015.
  */
 var Moo = require("./moo");
+var config = require("./config");
 
-var moo = new Moo();
+var moo = new Moo(config);
 moo.connect();
 
 process.stdin.resume();

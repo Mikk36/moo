@@ -8,7 +8,6 @@ var util = require("util");
 var iconv = require("iconv-lite");
 var net = require("net");
 var mysql = require("mysql");
-var Configuration = require("./config");
 var Mongo = require("./modules/mongo");
 var MessageParser = require("./modules/messageParser");
 var WebServer = require("./modules/webServer");
@@ -18,11 +17,12 @@ var Google = require("./modules/google");
 var Bing = require("./modules/bing");
 var Youtube = require("./modules/youtube");
 var WolframAlpha = require("./modules/wolframAlpha");
-var Tell = require("./modules/tell");
+var Notify = require("./modules/notify");
 
 class Moo {
-  constructor() {
+  constructor(config) {
     this.startTime = Date.now();
+    this.config = config;
     this.net = require("net");
     this.shutDown = false;
     this.connection = {};
@@ -37,7 +37,7 @@ class Moo {
     // Set up IRC socket
     this.socket = new net.Socket();
     var self = this;
-    this.socket.setTimeout(this.config("silenceTimeout") * 1000, function () {
+    this.socket.setTimeout(this.config.silenceTimeout * 1000, function () {
       util.log("Silence timeout hit, destroying socket");
       self.socket.destroy();
     });
@@ -52,19 +52,15 @@ class Moo {
     this.modules.bing = new Bing(this);
     this.modules.youtube = new Youtube(this);
     this.modules.wolframAlpha = new WolframAlpha(this);
-    this.modules.tell = new Tell(this);
-  }
-
-  config(name) {
-    return Configuration.getOption(name);
+    this.modules.tell = new Notify(this);
   }
 
   MySQLHandler() {
     this.db = mysql.createConnection({
-      host: this.config("sqlHost"),
-      user: this.config("sqlUser"),
-      password: this.config("sqlPass"),
-      database: this.config("sqlDB")
+      host: this.config.sqlHost,
+      user: this.config.sqlUser,
+      password: this.config.sqlPass,
+      database: this.config.sqlDB
     });
 
     this.db.connect(function (err) {
@@ -104,7 +100,7 @@ class Moo {
       util.log("Connected");
       setTimeout(function () {
         util.log("Setting nick");
-        self.nickCommand(self.config("nick"));
+        self.nickCommand(self.config.nick);
         util.log("Setting user");
         self.userCommand();
       }, 1000);
@@ -143,7 +139,7 @@ class Moo {
   connect() {
     util.log("Connecting");
     this.socket.setNoDelay();
-    this.socket.connect(this.config("ircPort"), this.config("ircServer"));
+    this.socket.connect(this.config.ircPort, this.config.ircServer);
   }
 
   quit() {
@@ -193,14 +189,14 @@ class Moo {
   }
 
   authenticate() {
-    this.privmsgCommand("nickserv", "identify " + this.config("nick") + " " + this.config("nickservPassword"));
+    this.privmsgCommand(this.config.nickserv, "identify " + this.config.nick + " " + this.config.nickservPassword);
   }
 
   ghostNick() {
-    this.privmsgCommand("nickserv", "ghost " + this.config("nick") + " " + this.config("nickservPassword"));
+    this.privmsgCommand(this.config.nickserv, "ghost " + this.config.nick + " " + this.config.nickservPassword);
     var self = this;
     setTimeout(function () {
-      self.nickCommand(self.config("nick"));
+      self.nickCommand(self.config.nick);
     }, 1000);
   }
 
@@ -211,11 +207,11 @@ class Moo {
   }
 
   userCommand() {
-    this.raw("USER " + this.config("ident") + " 0 * :" + this.config("ircRealName") + "\n");
+    this.raw("USER " + this.config.ident + " 0 * :" + this.config.ircRealName + "\n");
   }
 
   quitCommand() {
-    this.raw("QUIT :" + this.config("ircQuitMsg") + "\n");
+    this.raw("QUIT :" + this.config.ircQuitMsg + "\n");
   }
 
   pongCommand() {
@@ -234,7 +230,7 @@ class Moo {
 
       self.logEvent({
         target: to,
-        nick: self.config("nick"),
+        nick: self.config.nick,
         userhost: (self.parser.nameList[self.currentNick] !== undefined ? self.parser.nameList[self.currentNick].mask : null),
         act: "PRIVMSG",
         text: line

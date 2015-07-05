@@ -13,7 +13,7 @@ class WolframAlpha extends BaseModule {
     super();
     this.moo = moo;
 
-    if (!Wolfram) Wolfram = new Client(this.moo.config("wolframAuth"));
+    if (!Wolfram) Wolfram = new Client(this.moo.config.wolframAuth);
 
     this.moo.parser.on("privMsg", this.messageHandler.bind(this));
   }

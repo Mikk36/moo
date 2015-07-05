@@ -2,13 +2,15 @@
  * Created by Mikk on 4.07.2015.
  */
 var util = require("util");
+var events = require("events");
 var MongoClient = require("mongodb").MongoClient;
 
 class Mongo {
   constructor(moo) {
+    events.EventEmitter.call(this);
     this.moo = moo;
     var self = this;
-    MongoClient.connect(this.moo.config("mongoDB"), function (error, db) {
+    MongoClient.connect(this.moo.config.mongoDB, function (error, db) {
       if (error) {
         util.log("Error connecting to MongoDB: " + error.message);
         return;
@@ -16,6 +18,7 @@ class Mongo {
       util.log("MongoDB connected");
       self.db = db;
       self.createMongoListeners();
+      self.emit("connected", db);
     });
   }
 
@@ -34,5 +37,7 @@ class Mongo {
     });
   }
 }
+
+Mongo.prototype.__proto__ = events.EventEmitter.prototype;
 
 module.exports = Mongo;

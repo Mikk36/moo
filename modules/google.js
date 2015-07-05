@@ -21,7 +21,7 @@ class Google extends BaseModule {
     if (input[0] === "!google") {
       var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
       var self = this;
-      http.get("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&hl=et&userip=" + this.moo.config("googleUserIP") + "&rsz=3&q=" + encodeURIComponent(input[1]), function (res) {
+      http.get("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&hl=et&userip=" + this.moo.config.googleUserIP + "&rsz=3&q=" + encodeURIComponent(input[1]), function (res) {
         var body = '';
         res.on("data", function (chunk) {
           body += chunk;

@@ -13,10 +13,10 @@ class WebServer extends BaseModule {
   constructor(moo) {
     super();
     this.moo = moo;
-    this.config = this.moo.config.bind(this.moo);
+    this.config = this.moo.config;
 
     this.server = http.createServer();
-    this.server.listen(this.config("httpPort"));
+    this.server.listen(this.config.httpPort);
 
     this.server.on("request", this.handleRequest.bind(this));
   }
@@ -33,7 +33,7 @@ class WebServer extends BaseModule {
       if (amount !== null) {
         amount = parseInt(amount[1]);
       } else {
-        amount = this.config("httpDefaultLogAmount");
+        amount = this.config.httpDefaultLogAmount;
       }
 
       var rowIDRegex = new RegExp("^/log/id/([0-9]+)");
@@ -57,10 +57,10 @@ class WebServer extends BaseModule {
 
   getLogs(response, amount, rowID) {
     if (amount === undefined) {
-      amount = this.config("httpDefaultLogAmount");
+      amount = this.config.httpDefaultLogAmount;
     }
-    if (amount > this.config("httpLogAmountLimit")) {
-      amount = this.config("httpLogAmountLimit");
+    if (amount > this.config.httpLogAmountLimit) {
+      amount = this.config.httpLogAmountLimit;
     }
 
     var sqlQuery = "";
@@ -68,7 +68,7 @@ class WebServer extends BaseModule {
       sqlQuery = "\
         SELECT * FROM (\
           SELECT id, UNIX_TIMESTAMP(time) as time, nick, userhost, text, act FROM logs\
-          WHERE (target =  '" + this.config("ircChannel") + "' OR target IS NULL)  AND\
+          WHERE (target =  '" + this.config.ircChannel + "' OR target IS NULL)  AND\
             act NOT LIKE  '332' AND act NOT LIKE  '333'\
           ORDER BY id DESC\
           LIMIT ?\
@@ -80,7 +80,7 @@ class WebServer extends BaseModule {
           SELECT id, UNIX_TIMESTAMP(time) as time, nick, userhost, text, act\
           FROM logs\
           WHERE	\
-            ( target =  '" + this.config("ircChannel") + "' OR target IS NULL )\
+            ( target =  '" + this.config.ircChannel + "' OR target IS NULL )\
             AND act NOT LIKE  '332' AND act NOT LIKE  '333' AND id <= " + rowID + "\
           ORDER BY id DESC\
           LIMIT 6\
@@ -90,7 +90,7 @@ class WebServer extends BaseModule {
 	        SELECT id, UNIX_TIMESTAMP(time) as time, nick, userhost, text, act\
 	        FROM logs\
 	        WHERE\
-	          ( target =  '" + this.config("ircChannel") + "' OR target IS NULL)\
+	          ( target =  '" + this.config.ircChannel + "' OR target IS NULL)\
 	          AND act NOT LIKE  '332' AND act NOT LIKE  '333' AND id > " + rowID + "\n\
 	        ORDER BY id ASC\
 	        LIMIT 5\
@@ -114,7 +114,7 @@ class WebServer extends BaseModule {
 <html>\n\
   <head>\n\
     <meta charset=utf-8 />\n\
-    <title>" + escape(this.config("ircChannel")) + " logi</title>\n\
+    <title>" + escape(this.config.ircChannel) + " logi</title>\n\
     <style type=\"text/css\">\n\
       body {\n\
         font-family: Verdana, sans-serif;\n\
