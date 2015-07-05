@@ -38,8 +38,11 @@ class Notify extends BaseModule {
 
   reminderHandler(lineVars) {
     var self = this;
-    if (lineVars.cmd === "PRIVMSG" || "JOIN") {
+    if (lineVars.cmd === "PRIVMSG" || "JOIN" || "NICK") {
       var from = lineVars.fromNick;
+      if (lineVars.cmd === "NICK") {
+        from = lineVars.text;
+      }
       this.getNotifications(from).then(function (data) {
         var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
         data.forEach(function (notification) {
