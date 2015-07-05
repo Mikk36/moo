@@ -212,6 +212,7 @@ class MessageParser {
           act: this.lineVars.cmd,
           text: this.lineVars.text
         });
+        this.nameListChangeNick();
         break;
       case "TOPIC":
         this.moo.logEvent({
@@ -296,6 +297,12 @@ class MessageParser {
 
   nameListRemove() {
     delete this.nameList[this.lineVars.fromNick];
+  }
+
+  nameListChangeNick() {
+    var oldData = this.nameList[this.lineVars.fromNick];
+    delete this.nameList[this.lineVars.fromNick];
+    this.nameList[this.lineVars.text] = oldData;
   }
 
   static is_numeric(mixed_var) {
