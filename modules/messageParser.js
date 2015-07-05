@@ -13,6 +13,7 @@ class MessageParser {
     this.nameListComplete = true;
     this.lineVars = {};
     this.moo = moo;
+    this.config = this.moo.config.bind(this.moo);
   }
 
   processLine(rawLine) {
@@ -76,12 +77,12 @@ class MessageParser {
         this.moo.authenticate();
         var self = this;
         setTimeout(function () {
-          self.moo.joinCommand(self.moo.config("ircChannel"));
+          self.moo.joinCommand(self.config("ircChannel"));
         }, 1000);
         break;
       case 433: // ERR_NICKNAMEINUSE
       case 436: // ERR_NICKCOLLISION
-        this.moo.nickCommand(this.moo.config("nick") + "_" + (100 + Math.floor(Math.random() * 900)));
+        this.moo.nickCommand(this.config("nick") + "_" + (100 + Math.floor(Math.random() * 900)));
         this.moo.ghostNick();
         break;
       case 332: // RPL_TOPIC
@@ -111,8 +112,8 @@ class MessageParser {
         this.nameListComplete = true;
         break;
       case 474: // ERR_BANNEDFROMCHAN
-        this.moo.privmsgCommand("ChanServ", "UNBAN " + this.moo.config("ircChannel"));
-        this.moo.joinCommand(this.moo.config("ircChannel"));
+        this.moo.privmsgCommand("ChanServ", "UNBAN " + this.config("ircChannel"));
+        this.moo.joinCommand(this.config("ircChannel"));
         break;
       case 311: // RPL_WHOISUSER
     }
@@ -134,7 +135,7 @@ class MessageParser {
           text: this.lineVars.text
         });
 
-        if (this.lineVars.text.toLowerCase() == "quit()" && this.moo.config("adminUsers").indexOf(this.lineVars.fromNick.toLowerCase()) !== -1) {
+        if (this.lineVars.text.toLowerCase() == "quit()" && this.config("adminUsers").indexOf(this.lineVars.fromNick.toLowerCase()) !== -1) {
           this.moo.quit();
         }
 

@@ -8,11 +8,17 @@ var util = require("util");
 var iconv = require("iconv-lite");
 var net = require("net");
 var mysql = require("mysql");
-var Mongo = require("./modules/mongo");
-var WebServer = require("./modules/webServer");
-var Calculator = require("./modules/calculator");
-var MessageParser = require("./modules/messageParser");
 var Configuration = require("./config");
+var Mongo = require("./modules/mongo");
+var MessageParser = require("./modules/messageParser");
+var WebServer = require("./modules/webServer");
+var Knowledge = require("./modules/knowledge");
+var Calculator = require("./modules/calculator");
+var Google = require("./modules/google");
+var Bing = require("./modules/bing");
+var Youtube = require("./modules/youtube");
+var WolframAlpha = require("./modules/wolframAlpha");
+var Tell = require("./modules/tell");
 
 class Moo {
   constructor() {
@@ -40,12 +46,13 @@ class Moo {
     // Modules
     this.modules = {};
 
-    this.modules.knowledge = new (require("./modules/knowledge.js"))(this);
+    this.modules.knowledge = new Knowledge(this);
     this.modules.calculator = new Calculator(this);
-    this.modules.google = new (require("./modules/google.js"))(this);
-    this.modules.bing = new (require("./modules/bing.js"))(this);
-    this.modules.youtube = new (require("./modules/youtube.js"))(this);
-    this.modules.wolframAlpha = new (require("./modules/wolframAlpha.js"))(this);
+    this.modules.google = new Google(this);
+    this.modules.bing = new Bing(this);
+    this.modules.youtube = new Youtube(this);
+    this.modules.wolframAlpha = new WolframAlpha(this);
+    this.modules.tell = new Tell(this);
   }
 
   config(name) {

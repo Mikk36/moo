@@ -11,7 +11,7 @@ class Bing extends BaseModule {
   constructor(moo) {
     super();
     this.moo = moo;
-
+    this.config = this.moo.config.bind(this.moo);
     this.moo.parser.on("privMsg", this.messageHandler.bind(this));
   }
 
@@ -24,7 +24,7 @@ class Bing extends BaseModule {
       var options = {
         hostname: "api.datamarket.azure.com",
         path: "/Bing/Search/Web?\$format=json&\$top=3&Market='et-EE'&Query='" + encodeURIComponent(input[1]) + "'",
-        auth: this.moo.config("bingAuth") + ":" + this.moo.config("bingAuth")
+        auth: this.config("bingAuth") + ":" + this.config("bingAuth")
       };
 
       var self = this;
