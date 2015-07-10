@@ -28,7 +28,7 @@ class Youtube {
           matchedID = matches2[0]
         }
         https.get("https://www.googleapis.com/youtube/v3/videos?part=id,snippet,contentDetails&id="
-          + matchedID + "&key=" + Moo.config.googleAuth, function (res) {
+          + matchedID + "&key=" + this.moo.config.googleAuth, function (res) {
           var body = "";
           res.on("data", function (chunk) {
             body += chunk;
