@@ -40,9 +40,13 @@ class Youtube {
             if (result.error !== undefined) {
               message += "YouTube error: " + result.error.message;
             } else {
-              message += "YouTube video: \"" + result.items[0].snippet.title + "\""
-                + " length: " + result.items[0].contentDetails.duration.substr(2).toLowerCase()
-                + " by: " + result.items[0].snippet.channelTitle;
+              if (result.pageInfo.totalResults > 0) {
+                message += "YouTube video: \"" + result.items[0].snippet.title + "\""
+                  + " length: " + result.items[0].contentDetails.duration.substr(2).toLowerCase()
+                  + " by: " + result.items[0].snippet.channelTitle;
+              } else {
+                message += "Youtube video not found";
+              }
             }
             self.moo.privmsgCommand(to, message);
           });
