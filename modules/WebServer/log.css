@@ -1,0 +1,38 @@
+body {
+  font-family: Roboto, Verdana, sans-serif;
+  font-size: 10pt;
+  background-color: #111;
+  color: silver;
+}
+
+a {
+  color: white;
+}
+
+.join {
+  color: darkgreen;
+}
+
+.quit, .part, .kick {
+  color: darkred;
+}
+
+.mode, .topic, .nick {
+  color: royalblue;
+}
+
+.action {
+  font-style: italic;
+}
+
+.dayChange {
+  color: orange;
+}
+
+.time {
+  text-decoration: none;
+}
+
+.time:hover {
+  text-decoration: underline;
+}

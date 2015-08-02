@@ -10,6 +10,7 @@ class Knowledge extends BaseModule {
   constructor(moo) {
     super();
     this.moo = moo;
+    this.config = this.moo.config;
 
     this.learnReplies = [
       'I learn new things!',
@@ -29,119 +30,163 @@ class Knowledge extends BaseModule {
       "You've been mistaken here",
       "What!?"
     ];
-
-    moo.parser.on("privMsg", this.messageHandler.bind(this));
+    this.moo.mongo.on("connected", this.mongoConnected.bind(this));
+    this.moo.parser.on("privMsg", this.messageHandler.bind(this));
   }
 
-  messageHandler(lineVars) {
-    var input = Knowledge.explode(lineVars.text, " ", 3);
-    var to;
+  mongoConnected(db) {
+    this.db = db;
+  }
+
+  getAnswer(question) {
     var self = this;
-    if (input[0] === "!learn") {
-      to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
-      // Are you op in my channel?
-      if (this.moo.parser.nameList[lineVars.fromNick] !== undefined && this.moo.parser.nameList[lineVars.fromNick].mode.indexOf("o") !== -1) {
-        // Missing parameters?
-        if (input.length < 3) {
-          this.moo.privmsgCommand(to, "Syntax: <question> <answer>");
-        } else {
-          // Do we have a definition with the same name already?
-          this.moo.db.query("SELECT answer FROM definitions WHERE question = ? LIMIT 1", [input[1]], function (err, result) {
-            if (err !== null) {
-              self.moo.privmsgCommand(to, "Something went wrong here: " + err.toString());
-            } else {
-              var learnQuery = "";
-              if (result.length > 0) {
-                learnQuery = "UPDATE definitions SET answer = " + self.moo.db.escape(input[2]) + " WHERE question = " + self.moo.db.escape(input[1]);
-              } else {
-                learnQuery = "INSERT INTO definitions  (question, answer, created) VALUES (" + self.moo.db.escape(input[1]) + ", " + self.moo.db.escape(input[2]) + ", CURRENT_TIMESTAMP)";
-              }
-              self.moo.db.query(learnQuery, function (err2, result2) {
-                if (err2 !== null) {
-                  self.moo.privmsgCommand(to, "Something went wrong here: " + err2.toString());
-                } else {
-                  self.moo.privmsgCommand(to, self.getRandomLearnReply());
-                }
-              });
-            }
+    return new Promise(function (resolve, reject) {
+      if (self.db === undefined) {
+        reject("DB not available");
+      } else {
+        var collection = self.db.collection(self.config.knowledgeCollection);
+        collection.findOne({question: question}).then(function (document) {
+          if (document) {
+            resolve(document.answer);
+          } else {
+            reject("No answers found");
+          }
+        });
+      }
+    });
+  }
+
+  setAnswer(question, answer) {
+    var self = this;
+    // TODO: instead of quitting, store for later attempt
+    return new Promise(function (resolve, reject) {
+      if (self.db === undefined) {
+        reject();
+      } else {
+        var collection = self.db.collection(self.config.knowledgeCollection);
+        collection.updateOne({question: question}, {
+          question: question,
+          answer: answer,
+          modified: new Date()
+        }, {
+          upsert: true
+        }).then(function (result) {
+          resolve(result);
+        }).catch(function (err) {
+          reject(err);
+        });
+      }
+    });
+
+  }
+
+  removeAnswer(question) {
+    var self = this;
+    // TODO: instead of quitting, store for later attempt
+    return new Promise(function (resolve, reject) {
+      if (self.db === undefined) {
+        reject();
+      } else {
+        var collection = self.db.collection(self.config.knowledgeCollection);
+        //noinspection JSCheckFunctionSignatures
+        collection.deleteMany({question: question}).then(function (result) {
+          if (result.deletedCount < 1) {
+            reject("None removed");
+          } else {
+            resolve()
+          }
+        });
+      }
+    });
+  }
+
+  messageHandler(line) {
+    var self = this;
+    var input = Knowledge.explode(line.text, " ", 3);
+    var to = (line.to.charAt(0) === "#" ? line.to : line.fromNick);
+    switch (input[0]) {
+      case "!learn":
+        if (!this.commandCheck(to, line.fromNick, input, 3)) {
+          break;
+        }
+        this.setAnswer(input[1], input[2]).then(function () {
+          self.respondLearn(to);
+        });
+        break;
+      case "!forget":
+        if (!this.commandCheck(to, line.fromNick, input, 2)) {
+          break;
+        }
+        this.removeAnswer(input[1]).then(function () {
+          self.respondForget(to);
+        }, function () {
+          self.respondForgetFail(to);
+        });
+        break;
+      case "!append":
+        if (!this.commandCheck(to, line.fromNick, input, 3)) {
+          break;
+        }
+        this.getAnswer(input[1]).then(
+          function (answer) {
+            return self.setAnswer(input[1], answer + " | " + input[2])
+          }, function () {
+            self.respondForgetFail(to);
+          }
+        ).then(
+          function () {
+            self.respondLearn(to);
+          }
+        );
+        break;
+      default:
+        if (input.length === 1 && input[0].charAt(input[0].length - 1) === "?") {
+          this.getAnswer(input[0].substr(0, input[0].length - 1)).then(function (answer) {
+            self.moo.privmsgCommand(to, answer);
+          }, function (error) {
+            util.log(error);
           });
         }
-      } else {
-        this.moo.privmsgCommand(to, "noob");
-      }
-    } else if (input[0] === "!forget") {
-      to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
-      // Are you op in my channel?
-      if (this.moo.parser.nameList[lineVars.fromNick] !== undefined && this.moo.parser.nameList[lineVars.fromNick].mode.indexOf("o") !== -1) {
-        // Missing parameters?
-        if (input.length < 2) {
-          this.moo.privmsgCommand(to, "Syntax: <question>");
-        } else {
-          // Does the definition even exist?
-          this.moo.db.query("SELECT answer FROM definitions WHERE question = ? LIMIT 1", [input[1]], function (err, result) {
-            if (err !== null) {
-              self.moo.privmsgCommand(to, "Something went wrong here: " + err.toString());
-            } else {
-              var forgetQuery = "";
-              if (result.length > 0) {
-                forgetQuery = "DELETE FROM definitions WHERE question = " + self.moo.db.escape(input[1]);
-                self.moo.db.query(forgetQuery, function (err2, result2) {
-                  if (err2 !== null) {
-                    self.moo.privmsgCommand(to, "Something went wrong here: " + err2.toString());
-                  } else {
-                    self.moo.privmsgCommand(to, self.getRandomForgetReply());
-                  }
-                });
-              } else {
-                self.moo.privmsgCommand(to, self.getRandomForgetFailReply());
-              }
-            }
-          });
-        }
-      } else {
-        this.moo.privmsgCommand(to, "noob");
-      }
-    } else if (input[0] === "!change") {
-      to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
-      // Are you op in my channel?
-      if (this.moo.parser.nameList[lineVars.fromNick] !== undefined && this.moo.parser.nameList[lineVars.fromNick].mode.indexOf("o") !== -1) {
-        // Missing parameters?
-        if (input.length < 3) {
-          this.moo.privmsgCommand(to, "Syntax: <question> <what to add>");
-        } else {
-          // Does the definition even exist?
-          this.moo.db.query("SELECT answer FROM definitions WHERE question = ? LIMIT 1", [input[1]], function (err, result) {
-            if (err !== null) {
-              self.moo.privmsgCommand(to, "Something went wrong here: " + err.toString());
-            } else {
-              var changeQuery = "";
-              if (result.length > 0) {
-                changeQuery = "UPDATE definitions SET answer = CONCAT(answer, ' | ', " + self.moo.db.escape(input[2]) + ") WHERE question = " + self.moo.db.escape(input[1]);
-                self.moo.db.query(changeQuery, function (err2, result2) {
-                  if (err2 !== null) {
-                    self.moo.privmsgCommand(to, "Something went wrong here: " + err2.toString());
-                  } else {
-                    self.moo.privmsgCommand(to, self.getRandomLearnReply());
-                  }
-                });
-              } else {
-                self.moo.privmsgCommand(to, self.getRandomForgetFailReply());
-              }
-            }
-          });
-        }
-      } else {
-        this.moo.privmsgCommand(to, "noob");
-      }
-    } else if (input.length === 1 && input[0].charAt(input[0].length - 1) === "?") {
-      this.moo.db.query("SELECT answer FROM definitions WHERE question = ? LIMIT 1", [input[0].substr(0, input[0].length - 1)], function (err, result) {
-        if (result.length > 0) {
-          var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
-          self.moo.privmsgCommand(to, result[0].answer);
-        }
-        console.log(err);
-      });
     }
+  }
+
+  commandCheck(to, nick, input, length) {
+    if (!this.isOperator(nick)) {
+      this.respondNoPermission(to);
+      return false;
+    }
+    if (input.length < length) {
+      switch (length) {
+        case 2:
+          this.moo.privmsgCommand(to, "Syntax: <question>");
+          break;
+        case 3:
+          this.moo.privmsgCommand(to, "Syntax: <question> <answer>");
+          break;
+      }
+      return false;
+    }
+    return true;
+  }
+
+  respondLearn(to) {
+    this.moo.privmsgCommand(to, this.getRandomLearnReply());
+  }
+
+  respondForget(to) {
+    this.moo.privmsgCommand(to, this.getRandomForgetReply());
+  }
+
+  respondForgetFail(to) {
+    this.moo.privmsgCommand(to, this.getRandomForgetFailReply());
+  }
+
+  respondNoPermission(to) {
+    this.moo.privmsgCommand(to, "noob");
+  }
+
+  isOperator(nick) {
+    return this.moo.nameList.hasMode(nick, "o");
   }
 
   static getRandomInt(min, max) {

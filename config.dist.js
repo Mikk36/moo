@@ -16,11 +16,7 @@ var config = {
   ircPort:              6667,
   ircChannel:           "#something",
   ircChannelKey:        false, //or password as a string
-  sqlHost:              "localhost",
-  sqlUser:              "username",
-  sqlPass:              "password",
-  sqlDB:                "databaseName",
-  mongoDB: "mongodb://localhost:27017/database",
+  mongoDB:              "mongodb://localhost:27017/database",
   silenceTimeout:       300,
   httpPort:             38080,
   httpDefaultLogAmount: 100,
@@ -29,8 +25,10 @@ var config = {
   adminUsers:           ["yourNick"],
   bingAuth:             "key",
   wolframAuth:          "key",
-  googleAuth: "key", // https://code.google.com/apis/console
-  notifyCollection: "notify"
+  googleAuth:           "key", // https://code.google.com/apis/console
+  logCollection:        "log",
+  knowledgeCollection:  "knowledge",
+  notifyCollection:     "notify"
 };
 
 for (var key in config) {

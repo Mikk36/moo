@@ -1,0 +1,52 @@
+- var arrowRight = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&mdash;&rsaquo;";
+doctype html
+html
+  head
+    title #{channel} logi
+    link(href="http://fonts.googleapis.com/css?family=Roboto", rel="stylesheet", type="text/css")
+    link(href="/log.css", rel="stylesheet", type="text/css")
+  body
+    p
+      - var currentDate = data[0].time.toDateString();
+      span.dayChange Log starts at !{data[0].time.toLocaleDateString()}
+      br
+      each row in data
+        if row.time.toDateString() !== currentDate
+          span.dayChange 00:00:00&nbsp;!{arrowRight} Day changed to (!{row.time.toLocaleDateString()})
+          br
+          - currentDate = row.time.toDateString();
+        a.time(href = "/log/id/" + row._id, title = row.time.toLocaleDateString()) !{pad(row.time.getHours())}:!{pad(row.time.getMinutes())}:!{pad(row.time.getSeconds())}&nbsp;
+        case row.act
+          when "JOIN"
+            span.join !{arrowRight} join: (!{row.nick}) (!{row.userhost})
+          when "QUIT"
+            span.quit
+              | !{arrowRight} quit: (!{row.nick}) (!{row.userhost})
+              if row.escapedText !== undefined && row.escapedText.length > 0
+                | &nbsp;(!{linkify(row.escapedText)})
+          when "MODE"
+            span.mode !{arrowRight} mode: (!{row.nick}) sets mode (!{row.escapedText})
+          when "PART"
+            span.part
+              | !{arrowRight} part: (!{row.nick}) (!{row.userhost})
+              if row.escapedText !== undefined && row.escapedText.length > 0
+                | &nbsp;(!{linkify(row.escapedText)})
+          when "NICK"
+            span.mode !{arrowRight} mode: (!{row.nick}) sets mode (!{row.escapedText})
+          when "TOPIC"
+            span.topic !{arrowRight} topic: (!{row.nick}) changes topic to (!{linkify(row.escapedText)})
+          when "KICK"
+            - var nick_end = row.escapedText.indexOf(":");
+            - var nick = row.escapedText.substring(0, nick_end);
+            - var reason = row.escapedText.substring(nick_end + 1);
+            span.kick
+              | !{arrowRight} kick (!{nick}) was kicked by (!{row.nick})
+              if reason.length > 0
+                | &nbsp;(!{linkify(reason)})
+          when "PRIVMSG"
+            - var actionTest = JSON.stringify(row.text);
+            if actionTest.indexOf("\\u0001ACTION") !== -1
+              span.action &bull; !{row.nick}!{linkify(row.escapedText.substr(7, row.escapedText.length - 1))}
+            else
+              span.privmsg (!{row.nick}) !{linkify(row.escapedText)}
+        br

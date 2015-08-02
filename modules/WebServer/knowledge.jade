@@ -1,0 +1,12 @@
+doctype html
+html
+  head
+    title Bot's Knowledge
+    link(href="http://fonts.googleapis.com/css?family=Roboto", rel="stylesheet", type="text/css")
+    link(href="/knowledge.css", rel="stylesheet", type="text/css")
+  body
+    table
+      each row in data
+        tr
+          td !{row.question}
+          td !{linkify(row.answer)}

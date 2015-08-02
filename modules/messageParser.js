@@ -9,10 +9,9 @@ var util = require("util");
 class MessageParser {
   constructor(moo) {
     events.EventEmitter.call(this);
-    this.nameList = {};
-    this.nameListComplete = true;
-    this.lineVars = {};
     this.moo = moo;
+    this.nameList = this.moo.nameList;
+    this.lineVars = {};
     this.config = this.moo.config;
   }
 
@@ -105,11 +104,11 @@ class MessageParser {
         break;
       case 352: // RPL_WHOREPLY
         // Populate current channel users list
-        this.nameListPopulate();
+        this.nameList.populate(this.lineVars.raw);
         break;
       case 315: // RPL_ENDOFWHO
         // End of current channel users list
-        this.nameListComplete = true;
+        this.nameList.completeList();
         break;
       case 474: // ERR_BANNEDFROMCHAN
         this.moo.privmsgCommand("ChanServ", "UNBAN " + this.config.ircChannel);
@@ -158,6 +157,7 @@ class MessageParser {
         }
         break;
       case "QUIT":
+        this.nameList.removeNick(this.lineVars.fromNick);
         this.moo.logEvent({
           nick: this.lineVars.fromNick,
           userhost: this.lineVars.fromIdent + "@" + this.lineVars.fromHost,
@@ -169,11 +169,11 @@ class MessageParser {
         break;
       case "JOIN":
         if (this.lineVars.fromNick === this.moo.currentNick) {
-          this.nameListComplete = false;
-          this.nameList = {};
+          this.nameList.initializeList();
           this.moo.whoCommand(this.lineVars.to);
+        } else {
+          this.nameList.addNick(this.lineVars.fromNick, this.lineVars.fromIdent, this.lineVars.fromHost);
         }
-        this.nameListAdd();
 
         this.moo.logEvent({
           target: this.lineVars.to,
@@ -193,7 +193,7 @@ class MessageParser {
           act: this.lineVars.cmd,
           text: this.lineVars.params + ":" + this.lineVars.text
         });
-        this.nameListRemove();
+        this.nameList.removeNick(this.lineVars.fromNick);
         break;
       case "PART":
         this.moo.logEvent({
@@ -203,7 +203,7 @@ class MessageParser {
           act: this.lineVars.cmd,
           text: this.lineVars.text
         });
-        this.nameListRemove();
+        this.nameList.removeNick(this.lineVars.fromNick);
         break;
       case "NICK":
         this.moo.logEvent({
@@ -212,7 +212,7 @@ class MessageParser {
           act: this.lineVars.cmd,
           text: this.lineVars.text
         });
-        this.nameListChangeNick();
+        this.nameList.changeNick(this.lineVars.fromNick, this.lineVars.text);
         break;
       case "TOPIC":
         this.moo.logEvent({
@@ -245,15 +245,17 @@ class MessageParser {
             } else {
               paramNumber++;
               if (modes.indexOf(params[0][i]) !== -1) {
+                var mode = params[0][i];
                 if (params[paramNumber] !== undefined) {
-                  var currentMode = this.nameList[params[paramNumber]].mode.indexOf(params[0][i]);
-                  if (side == "+") {
-                    if (currentMode === -1) {
-                      this.nameList[params[paramNumber]].mode.push(params[0][i]);
+                  var nick = params[paramNumber];
+                  var currentMode = this.nameList.hasMode(nick, mode);
+                  if (side === "+") {
+                    if (currentMode === false) {
+                      this.nameList.addMode(nick, mode);
                     }
                   } else {
-                    if (currentMode !== -1) {
-                      this.nameList[params[paramNumber]].mode.splice(currentMode, 1);
+                    if (currentMode === true) {
+                      this.nameList.removeMode(nick, mode);
                     }
                   }
                 }
@@ -263,46 +265,6 @@ class MessageParser {
         }
         break;
     }
-  }
-
-  nameListPopulate() {
-    if (this.nameListComplete === false) {
-      var data = this.lineVars.raw.split(" ");
-      var modes = {};
-      modes["+"] = "v";
-      modes["@"] = "o";
-      var name = data[7];
-      var ident = data[4];
-      var host = data[5];
-      var mode = data[8].substr(-1);
-      this.nameList[name] = {
-        mask: ident + "@" + host,
-        mode: []
-      };
-      if (modes[mode] !== undefined) {
-        mode = modes[mode];
-        if (this.nameList[name].mode.indexOf(mode) === -1) {
-          this.nameList[name].mode.push(mode);
-        }
-      }
-    }
-  }
-
-  nameListAdd() {
-    this.nameList[this.lineVars.fromNick] = {
-      mask: this.lineVars.fromIdent + "@" + this.lineVars.fromHost,
-      mode: []
-    };
-  }
-
-  nameListRemove() {
-    delete this.nameList[this.lineVars.fromNick];
-  }
-
-  nameListChangeNick() {
-    var oldData = this.nameList[this.lineVars.fromNick];
-    delete this.nameList[this.lineVars.fromNick];
-    this.nameList[this.lineVars.text] = oldData;
   }
 
   static is_numeric(mixed_var) {

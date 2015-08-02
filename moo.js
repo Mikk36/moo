@@ -7,8 +7,8 @@
 var util = require("util");
 var iconv = require("iconv-lite");
 var net = require("net");
-var mysql = require("mysql");
 var Mongo = require("./modules/mongo");
+var NameList = require("./modules/nameList");
 var MessageParser = require("./modules/messageParser");
 var WebServer = require("./modules/webServer");
 var Knowledge = require("./modules/knowledge");
@@ -21,26 +21,18 @@ var Notify = require("./modules/notify");
 
 class Moo {
   constructor(config) {
-    this.startTime = Date.now();
     this.config = config;
-    this.net = require("net");
     this.shutDown = false;
-    this.connection = {};
     this.name = "Moo";
     this.currentNick = "";
+    this.mongo = new Mongo(this);
     this.webServer = new WebServer(this);
+    this.nameList = new NameList();
     this.parser = new MessageParser(this);
     this.incomingData = "";
-    this.mongo = new Mongo(this);
-    this.MySQLHandler();
-
     // Set up IRC socket
     this.socket = new net.Socket();
-    var self = this;
-    this.socket.setTimeout(this.config.silenceTimeout * 1000, function () {
-      util.log("Silence timeout hit, destroying socket");
-      self.socket.destroy();
-    });
+    this.firstConnect = true;
     this.createSocketListeners();
 
     // Modules
@@ -53,44 +45,6 @@ class Moo {
     this.modules.youtube = new Youtube(this);
     this.modules.wolframAlpha = new WolframAlpha(this);
     this.modules.tell = new Notify(this);
-  }
-
-  MySQLHandler() {
-    this.db = mysql.createConnection({
-      host: this.config.sqlHost,
-      user: this.config.sqlUser,
-      password: this.config.sqlPass,
-      database: this.config.sqlDB
-    });
-
-    this.db.connect(function (err) {
-      if (err) {
-        util.log("Error connecting to DB: " + err.code);
-        setTimeout(self.MySQLHandler, 2000);
-      } else {
-        util.log("Connection to DB established");
-      }
-    });
-
-    var errorHandler = function (err) {
-      if (!err.fatal) {
-        util.log("Error: " + err.message);
-        return;
-      }
-
-      if (err.code !== "PROTOCOL_CONNECTION_LOST") {
-        util.log("Mysql error not \"Connection lost\" !?");
-        util.log("Error: " + err.message);
-
-        this.db.end();
-      }
-
-      util.log("Re-connecting MySQL connection: " + err.stack);
-
-      this.MySQLHandler();
-    };
-
-    this.db.on("error", errorHandler.bind(this));
   }
 
   createSocketListeners() {
@@ -124,11 +78,11 @@ class Moo {
       util.log("Socket closed");
       if (self.shutDown === true) {
         process.exit();
+      } else {
+        setTimeout(function () {
+          self.connect();
+        }, 5000);
       }
-
-      setTimeout(function () {
-        self.connect();
-      }, 5000);
     });
 
     this.socket.on("error", function (error) {
@@ -138,6 +92,15 @@ class Moo {
 
   connect() {
     util.log("Connecting");
+    if (this.firstConnect) {
+      var self = this;
+      this.socket.setTimeout(this.config.silenceTimeout * 1000, function () {
+        util.log("Silence timeout hit, destroying socket");
+        self.socket.destroy();
+      });
+      this.firstConnect = false;
+    }
+
     this.socket.setNoDelay();
     this.socket.connect(this.config.ircPort, this.config.ircServer);
   }
@@ -231,7 +194,7 @@ class Moo {
       self.logEvent({
         target: to,
         nick: self.config.nick,
-        userhost: (self.parser.nameList[self.currentNick] !== undefined ? self.parser.nameList[self.currentNick].mask : null),
+        userhost: (self.nameList.list[self.currentNick] !== undefined ? self.nameList.list[self.currentNick].mask : null),
         act: "PRIVMSG",
         text: line
       });
@@ -262,26 +225,8 @@ class Moo {
     this.raw("WHO " + what + "\n");
   }
 
-  // Logging
   logEvent(data) {
-    if (data.act === undefined || data.act.length === 0) {
-      return new Error("act must be specified");
-    }
-
-    var allowedList = ["target", "nick", "userhost", "act", "text"];
-    var dbData = {};
-    for (var prop in data) {
-      //noinspection JSUnfilteredForInLoop
-      if (allowedList.indexOf(prop) === -1) {
-        return new Error("Unknown data key: '" + prop + "'");
-      }
-      //noinspection JSUnfilteredForInLoop
-      dbData[prop] = data[prop];
-    }
-
-    this.db.query("INSERT INTO logs SET ?", dbData, function () {
-    });
-    //util.log(query);
+    this.mongo.logEvent(data);
   }
 }
 
