@@ -20,7 +20,7 @@ class WebServer extends BaseModule {
   }
 
   requestHandlers() {
-    this.express.get("/robots.txt", WebServer2.robotsHandler);
+    this.express.get("/robots.txt", WebServer.robotsHandler);
     this.express.get("/log", this.logHandler.bind(this));
     this.express.get("/log/:count", this.logHandler.bind(this));
     this.express.get("/log/id/:id", this.logHandler.bind(this));
@@ -36,7 +36,7 @@ class WebServer extends BaseModule {
 
   knowledgeHandler(req, res) {
     var self = this;
-    this.db.getKnowledge().then(WebServer2.knowledgeResponder.bind(self, res));
+    this.db.getKnowledge().then(WebServer.knowledgeResponder.bind(self, res));
   }
 
   static knowledgeResponder(res, data) {
@@ -44,7 +44,7 @@ class WebServer extends BaseModule {
       row.answer = escape(row.answer);
     });
     var locals = {
-      linkify: WebServer2.linkify,
+      linkify: WebServer.linkify,
       data: data
     };
     var jadeFunc = jade.compileFile(path.resolve(__dirname, this.__proto__.constructor.name + "/knowledge.jade"), {pretty: true});
@@ -54,10 +54,9 @@ class WebServer extends BaseModule {
 
   logHandler(req, res) {
     var self = this;
-    util.log("got request");
     var count = 100;
     if (req.params.id !== undefined) {
-      this.db.getLogsForId(req.params.id).then(WebServer2.logResponder.bind(self, res));
+      this.db.getLogsForId(req.params.id).then(WebServer.logResponder.bind(self, res));
       return;
     } // TODO: implement linking to a specific log entry
     if (req.params.count !== undefined) {
@@ -66,12 +65,10 @@ class WebServer extends BaseModule {
         count = value;
       }
     }
-    util.log("Count: " + count);
-    this.db.getLogs(count).then(WebServer2.logResponder.bind(self, res));
+    this.db.getLogs(count).then(WebServer.logResponder.bind(self, res));
   }
 
   static logResponder(res, data) {
-    util.log("responding");
 
     data.forEach(function (row) {
       if (row.text !== undefined) {
@@ -79,8 +76,8 @@ class WebServer extends BaseModule {
       }
     });
     var locals = {
-      linkify: WebServer2.linkify,
-      pad: WebServer2.pad,
+      linkify: WebServer.linkify,
+      pad: WebServer.pad,
       escape: escape,
       channel: this.config.ircChannel,
       data: data
