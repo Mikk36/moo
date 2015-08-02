@@ -8,7 +8,7 @@ var express = require("express");
 var jade = require("jade");
 var path = require("path");
 
-class WebServer2 extends BaseModule {
+class WebServer extends BaseModule {
   constructor(moo) {
     super();
     this.moo = moo;
@@ -111,4 +111,4 @@ class WebServer2 extends BaseModule {
   }
 }
 
-module.exports = WebServer2;
+module.exports = WebServer;
