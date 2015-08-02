@@ -168,11 +168,9 @@ class MessageParser {
       case "NOTICE":
         break;
       case "JOIN":
+        this.nameList.addNick(this.lineVars.fromNick, this.lineVars.fromIdent, this.lineVars.fromHost);
         if (this.lineVars.fromNick === this.moo.currentNick) {
-          this.nameList.initializeList();
           this.moo.whoCommand(this.lineVars.to);
-        } else {
-          this.nameList.addNick(this.lineVars.fromNick, this.lineVars.fromIdent, this.lineVars.fromHost);
         }
 
         this.moo.logEvent({

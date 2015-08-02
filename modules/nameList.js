@@ -19,25 +19,25 @@ class NameList {
   }
 
   populate(line) {
-    if (this.complete === false) {
-      //util.log(line);
-      var data = line.split(" ");
-      var modes = {};
-      modes["+"] = "v";
-      modes["@"] = "o";
-      var name = data[7];
-      var ident = data[4];
-      var host = data[5];
-      var mode = data[8].substr(-1);
-      this.list[name] = {
-        mask: ident + "@" + host,
-        mode: []
-      };
-      if (modes[mode] !== undefined) {
-        mode = modes[mode];
-        if (this.list[name].mode.indexOf(mode) === -1) {
-          this.list[name].mode.push(mode);
-        }
+    if (this.complete) {
+      this.initializeList();
+    }
+    var data = line.split(" ");
+    var modes = {};
+    modes["+"] = "v";
+    modes["@"] = "o";
+    var name = data[7];
+    var ident = data[4];
+    var host = data[5];
+    var mode = data[8].substr(-1);
+    this.list[name] = {
+      mask: ident + "@" + host,
+      mode: []
+    };
+    if (modes[mode] !== undefined) {
+      mode = modes[mode];
+      if (this.list[name].mode.indexOf(mode) === -1) {
+        this.list[name].mode.push(mode);
       }
     }
   }
