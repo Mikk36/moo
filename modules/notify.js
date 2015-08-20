@@ -50,7 +50,7 @@ class Notify extends BaseModule {
         var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : from);
         data.forEach(function (notification) {
           this.moo.privmsgCommand(to, notification.to + ": " + Moment(notification.time).fromNow() + " <" + notification.from + "> " + notification.message);
-        });
+        }.bind(this));
       }.bind(this));
     }
   }
