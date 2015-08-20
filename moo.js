@@ -18,6 +18,7 @@ var Bing = require("./modules/bing");
 var Youtube = require("./modules/youtube");
 var WolframAlpha = require("./modules/wolframAlpha");
 var Notify = require("./modules/notify");
+var Seen = require("./modules/seen");
 
 class Moo {
   /**
@@ -48,6 +49,7 @@ class Moo {
     this.modules.youtube = new Youtube(this);
     this.modules.wolframAlpha = new WolframAlpha(this);
     this.modules.tell = new Notify(this);
+    this.modules.seen = new Seen(this);
   }
 
   createSocketListeners() {
