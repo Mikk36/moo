@@ -8,6 +8,9 @@ var BaseModule = require("./baseModule");
 var math = require('mathjs');
 
 class Calculator extends BaseModule {
+  /**
+   * @param {Moo} moo
+   */
   constructor(moo) {
     super();
     this.moo = moo;
@@ -15,6 +18,9 @@ class Calculator extends BaseModule {
     this.moo.parser.on("privMsg", this.messageHandler.bind(this));
   }
 
+  /**
+   * @param {Object} lineVars
+   */
   messageHandler(lineVars) {
     var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
     var input = Calculator.explode(lineVars.text, " ", 2);

@@ -8,6 +8,9 @@ var https = require("https");
 var BaseModule = require("./baseModule");
 
 class Bing extends BaseModule {
+  /**
+   * @param {Moo} moo
+   */
   constructor(moo) {
     super();
     this.moo = moo;
@@ -15,6 +18,9 @@ class Bing extends BaseModule {
     this.moo.parser.on("privMsg", this.messageHandler.bind(this));
   }
 
+  /**
+   * @param {Object} lineVars
+   */
   messageHandler(lineVars) {
     var input = Bing.explode(lineVars.text, " ", 2);
 
@@ -27,7 +33,6 @@ class Bing extends BaseModule {
         auth: this.config.bingAuth + ":" + this.config.bingAuth
       };
 
-      var self = this;
       https.get(options, function (res) {
         var body = '';
         res.on("data", function (chunk) {
@@ -42,11 +47,11 @@ class Bing extends BaseModule {
             }
             for (var i = 0; i < resultCount; i++) {
               var item = result.d.results[i];
-              self.moo.privmsgCommand(to, item.Title + " " + item.Url);
+              this.moo.privmsgCommand(to, item.Title + " " + item.Url);
             }
           }
-        });
-      });
+        }.bind(this));
+      }.bind(this));
     }
   }
 }

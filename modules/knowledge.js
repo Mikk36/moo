@@ -7,6 +7,9 @@ var util = require("util");
 var BaseModule = require("./baseModule");
 
 class Knowledge extends BaseModule {
+  /**
+   * @param {Moo} moo
+   */
   constructor(moo) {
     super();
     this.moo = moo;
@@ -34,74 +37,100 @@ class Knowledge extends BaseModule {
     this.moo.parser.on("privMsg", this.messageHandler.bind(this));
   }
 
+  /**
+   * Store the reference to the database when it has connected
+   * @param {Db} db
+   */
   mongoConnected(db) {
     this.db = db;
   }
 
+  /**
+   * Fetch an answer from the database
+   * @param {string} question
+   * @returns {Promise}
+   */
   getAnswer(question) {
-    var self = this;
     return new Promise(function (resolve, reject) {
-      if (self.db === undefined) {
+      if (this.db === undefined) {
         reject("DB not available");
       } else {
-        var collection = self.db.collection(self.config.knowledgeCollection);
-        collection.findOne({question: question}).then(function (document) {
-          if (document) {
-            resolve(document.answer);
-          } else {
-            reject("No answers found");
+        this.db.collection(this.config.knowledgeCollection, function (err, collection) {
+          if (err) {
+            reject(err);
+            return;
           }
+          collection.findOne({question: question}).then(function (document) {
+            if (document) {
+              resolve(document.answer);
+            } else {
+              reject("No answers found");
+            }
+          });
         });
       }
-    });
+    }.bind(this));
   }
 
+  /**
+   * Save an answer to the database
+   * @param {string} question
+   * @param {string} answer
+   * @returns {Promise}
+   */
   setAnswer(question, answer) {
-    var self = this;
     // TODO: instead of quitting, store for later attempt
     return new Promise(function (resolve, reject) {
-      if (self.db === undefined) {
+      if (this.db === undefined) {
         reject();
       } else {
-        var collection = self.db.collection(self.config.knowledgeCollection);
-        collection.updateOne({question: question}, {
-          question: question,
-          answer: answer,
-          modified: new Date()
-        }, {
-          upsert: true
-        }).then(function (result) {
-          resolve(result);
-        }).catch(function (err) {
-          reject(err);
+        this.db.collection(this.config.knowledgeCollection, function (err, collection) {
+          collection.updateOne({question: question}, {
+            question: question,
+            answer: answer,
+            modified: new Date()
+          }, {
+            upsert: true
+          }).then(function (result) {
+            resolve(result);
+          }).catch(function (err) {
+            reject(err);
+          });
         });
       }
-    });
+    }.bind(this));
 
   }
 
+  /**
+   * Remove an answer from the database
+   * @param {string} question
+   * @returns {Promise}
+   */
   removeAnswer(question) {
-    var self = this;
     // TODO: instead of quitting, store for later attempt
     return new Promise(function (resolve, reject) {
-      if (self.db === undefined) {
+      if (this.db === undefined) {
         reject();
       } else {
-        var collection = self.db.collection(self.config.knowledgeCollection);
-        //noinspection JSCheckFunctionSignatures
-        collection.deleteMany({question: question}).then(function (result) {
-          if (result.deletedCount < 1) {
-            reject("None removed");
-          } else {
-            resolve()
-          }
+        this.db.collection(this.config.knowledgeCollection, function (err, collection) {
+          //noinspection JSCheckFunctionSignatures
+          collection.deleteMany({question: question}).then(function (result) {
+            if (result.deletedCount < 1) {
+              reject("None removed");
+            } else {
+              resolve()
+            }
+          });
         });
       }
-    });
+    }.bind(this));
   }
 
+  /**
+   * @param {Object} line
+   */
   messageHandler(line) {
-    var self = this;
     var input = Knowledge.explode(line.text, " ", 3);
     var to = (line.to.charAt(0) === "#" ? line.to : line.fromNick);
     switch (input[0]) {
@@ -110,18 +139,18 @@ class Knowledge extends BaseModule {
           break;
         }
         this.setAnswer(input[1], input[2]).then(function () {
-          self.respondLearn(to);
-        });
+          this.respondLearn(to);
+        }.bind(this));
         break;
       case "!forget":
         if (!this.commandCheck(to, line.fromNick, input, 2)) {
           break;
         }
         this.removeAnswer(input[1]).then(function () {
-          self.respondForget(to);
-        }, function () {
-          self.respondForgetFail(to);
-        });
+          this.respondForget(to);
+        }.bind(this), function () {
+          this.respondForgetFail(to);
+        }.bind(this));
         break;
       case "!append":
         if (!this.commandCheck(to, line.fromNick, input, 3)) {
@@ -129,27 +158,35 @@ class Knowledge extends BaseModule {
         }
         this.getAnswer(input[1]).then(
           function (answer) {
-            return self.setAnswer(input[1], answer + " | " + input[2])
-          }, function () {
-            self.respondForgetFail(to);
-          }
+            return this.setAnswer(input[1], answer + " | " + input[2])
+          }.bind(this), function () {
+            this.respondForgetFail(to);
+          }.bind(this)
         ).then(
           function () {
-            self.respondLearn(to);
-          }
+            this.respondLearn(to);
+          }.bind(this)
         );
         break;
       default:
         if (input.length === 1 && input[0].charAt(input[0].length - 1) === "?") {
           this.getAnswer(input[0].substr(0, input[0].length - 1)).then(function (answer) {
-            self.moo.privmsgCommand(to, answer);
-          }, function (error) {
+            this.moo.privmsgCommand(to, answer);
+          }.bind(this), function (error) {
             util.log(error);
           });
         }
     }
   }
 
+  /**
+   * Check if the sender has the permissions and the message meets the requirements
+   * @param {string} to
+   * @param {string} nick
+   * @param {string} input
+   * @param {number} length
+   * @returns {boolean}
+   */
   commandCheck(to, nick, input, length) {
     if (!this.isOperator(nick)) {
       this.respondNoPermission(to);
@@ -169,38 +206,77 @@ class Knowledge extends BaseModule {
     return true;
   }
 
+  /**
+   * Reply with a success for learning
+   * @param {string} to
+   */
   respondLearn(to) {
     this.moo.privmsgCommand(to, this.getRandomLearnReply());
   }
 
+  /**
+   * Reply with a success for forgetting
+   * @param {string} to
+   */
   respondForget(to) {
     this.moo.privmsgCommand(to, this.getRandomForgetReply());
   }
 
+  /**
+   * Reply with a failure for forgetting
+   * @param {string} to
+   */
   respondForgetFail(to) {
     this.moo.privmsgCommand(to, this.getRandomForgetFailReply());
   }
 
+  /**
+   * Reply with a failure for permissions
+   * @param {string} to
+   */
   respondNoPermission(to) {
     this.moo.privmsgCommand(to, "noob");
   }
 
+  /**
+   * Check if the user is an operator
+   * @param {string} nick
+   * @returns {boolean}
+   */
   isOperator(nick) {
     return this.moo.nameList.hasMode(nick, "o");
   }
 
+  /**
+   * Get a random integer between min and max
+   * @param {number} min
+   * @param {number} max
+   * @returns {number}
+   */
   static getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
+  /**
+   * Get a random Learn success reply
+   * @returns {string}
+   */
   getRandomLearnReply() {
     return this.learnReplies[Knowledge.getRandomInt(0, this.learnReplies.length - 1)];
   }
 
+  /**
+   * Get a random forget success reply
+   * @returns {string}
+   */
   getRandomForgetReply() {
     return this.forgetReplies[Knowledge.getRandomInt(0, this.forgetReplies.length - 1)];
   }
 
+  /**
+   * Get a random forget fail reply
+   * @returns {string}
+   */
   getRandomForgetFailReply() {
     return this.forgetFailReplies[Knowledge.getRandomInt(0, this.forgetFailReplies.length - 1)];
   }

@@ -8,21 +8,23 @@ var MongoClient = mongo.MongoClient;
 var ObjectID = mongo.ObjectID;
 
 class Mongo {
+  /**
+   * @param {Moo} moo
+   */
   constructor(moo) {
     events.EventEmitter.call(this);
     this.moo = moo;
     this.config = this.moo.config;
-    var self = this;
     MongoClient.connect(this.config.mongoDB, function (error, db) {
       if (error) {
         util.log("Error connecting to MongoDB: " + error.message);
         return;
       }
       util.log("MongoDB connected");
-      self.db = db;
-      self.createMongoListeners();
-      self.emit("connected", db);
-    });
+      this.db = db;
+      this.createMongoListeners();
+      this.emit("connected", db);
+    }.bind(this));
   }
 
   createMongoListeners() {
@@ -40,13 +42,23 @@ class Mongo {
     });
   }
 
+  /**
+   * Log data to database
+   * @param {Object} data
+   * @param {string} data.act
+   * @param {string} [data.target]
+   * @param {string} [data.nick]
+   * @param {string} [data.userhost]
+   * @param {string} [data.text]
+   * @returns {Error|undefined}
+   */
   logEvent(data) {
     // TODO: instead of quitting, store for later attempt
     if (this.db === undefined) {
       return;
     }
 
-    if (data.act === undefined || data.act.length === 0) {
+    if (typeof data.act !== "string" || data.act.length === 0) {
       return new Error("act must be specified");
     }
 
@@ -70,10 +82,12 @@ class Mongo {
     collection.insert(dbData);
   }
 
+  /**
+   * @returns {Promise}
+   */
   getKnowledge() {
-    var self = this;
     return new Promise(function (resolve, reject) {
-      var collection = self.db.collection(self.config.knowledgeCollection);
+      var collection = this.db.collection(this.config.knowledgeCollection);
       collection.aggregate([
         {
           "$project": {
@@ -93,19 +107,22 @@ class Mongo {
           resolve(documents);
         }
       });
-    });
+    }.bind(this));
   }
 
+  /**
+   * @param {string} id
+   * @returns {Promise}
+   */
   getLogsForId(id) {
-    var self = this;
 
-    var collection = self.db.collection(self.config.logCollection);
+    var collection = this.db.collection(this.config.logCollection);
     var objectId = new ObjectID(id);
     var parallel = [];
     parallel.push(new Promise(function (resolve, reject) {
       collection.find({
         $or: [
-          {target: self.config.ircChannel},
+          {target: this.config.ircChannel},
           {target: {$exists: false}}
         ],
         $and: [
@@ -120,11 +137,11 @@ class Mongo {
         }
         resolve(documents);
       });
-    }));
+    }.bind(this)));
     parallel.push(new Promise(function (resolve, reject) {
       collection.find({
         $or: [
-          {target: self.config.ircChannel},
+          {target: this.config.ircChannel},
           {target: {$exists: false}}
         ],
         $and: [
@@ -139,7 +156,7 @@ class Mongo {
         }
         resolve(documents);
       });
-    }));
+    }.bind(this)));
     return new Promise(function (resolve, reject) {
       Promise.all(parallel).then(function (results) {
         var documents = [].concat.apply([], results);
@@ -151,8 +168,12 @@ class Mongo {
     });
   }
 
+  /**
+   * Get x lines of logs
+   * @param {number} count
+   * @returns {Promise}
+   */
   getLogs(count) {
-    var self = this;
 
     // A bit of safety
     count = parseInt(count, 10);
@@ -164,11 +185,11 @@ class Mongo {
     }
 
     return new Promise(function (resolve, reject) {
-      var collection = self.db.collection(self.config.logCollection);
+      var collection = this.db.collection(this.config.logCollection);
 
       collection.find({
         $or: [
-          {target: self.config.ircChannel},
+          {target: this.config.ircChannel},
           {target: {$exists: false}}
         ],
         $and: [
@@ -188,9 +209,16 @@ class Mongo {
           }
         }
       });
-    });
+    }.bind(this));
   }
 
+  /**
+   * @param {Object} a
+   * @param {ObjectID} a._id
+   * @param {Object} b
+   * @param {ObjectID} b._id
+   * @returns {number}
+   */
   static logSorter(a, b) {
     var aId = a._id.toHexString();
     var bId = b._id.toHexString();
@@ -203,10 +231,14 @@ class Mongo {
     return 0;
   }
 
+  /**
+   * Get notification list for nick
+   * @param {string} nick
+   * @returns {Promise}
+   */
   getNotifications(nick) {
-    var self = this;
     return new Promise(function (resolve, reject) {
-      var collection = self.db.collection(self.config.notifyCollection);
+      var collection = this.db.collection(this.config.notifyCollection);
       //noinspection JSDeprecatedSymbols,JSCheckFunctionSignatures
       collection.find({
         toInsensitive: nick.toLowerCase(),
@@ -235,9 +267,15 @@ class Mongo {
           }
         }
       });
-    });
+    }.bind(this));
   }
 
+  /**
+   * Store a message from one user to another
+   * @param {string} from
+   * @param {string} to
+   * @param {string} message
+   */
   storeNotification(from, to, message) {
     // TODO: instead of quitting, store for later attempt
     if (this.db === undefined) {

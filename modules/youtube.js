@@ -13,7 +13,6 @@ class Youtube {
   }
 
   messageHandler(lineVars) {
-    var self = this;
     var regExp = /http(s?):\/\/(?:youtu\.be\/|(?:[a-z]{2,3}\.)?youtube\.com\/watch(?:\?|#\!)(v=|[A-Za-z0-9_=]*&v=))([\w-]{11}).*/gi;
     var matches = lineVars.text.match(regExp);
     if (matches !== null) {
@@ -48,9 +47,9 @@ class Youtube {
                 message += "Youtube video not found";
               }
             }
-            self.moo.privmsgCommand(to, message);
-          });
-        });
+            this.moo.privmsgCommand(to, message);
+          }.bind(this));
+        }.bind(this));
       }
     }
   }

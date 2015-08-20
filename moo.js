@@ -20,6 +20,9 @@ var WolframAlpha = require("./modules/wolframAlpha");
 var Notify = require("./modules/notify");
 
 class Moo {
+  /**
+   * @param {Object} config
+   */
   constructor(config) {
     this.config = config;
     this.shutDown = false;
@@ -48,17 +51,16 @@ class Moo {
   }
 
   createSocketListeners() {
-    var self = this;
     // Connection established
     this.socket.on("connect", function () {
       util.log("Connected");
       setTimeout(function () {
         util.log("Setting nick");
-        self.nickCommand(self.config.nick);
+        this.nickCommand(this.config.nick);
         util.log("Setting user");
-        self.userCommand();
-      }, 1000);
-    });
+        this.userCommand();
+      }.bind(this), 1000);
+    }.bind(this));
 
     // Incoming data!
     this.socket.on("data", function (data) {
@@ -66,24 +68,24 @@ class Moo {
       if (data_.indexOf("\uFFFD") !== -1) {
         data_ = iconv.decode(data, "iso885913");
       }
-      self.incomingData += data_;
-      self.processData();
-    });
+      this.incomingData += data_;
+      this.processData();
+    }.bind(this));
 
     this.socket.on("timeout", function () {
-      self.socket.destroy();
-    });
+      this.socket.destroy();
+    }.bind(this));
 
     this.socket.on("close", function () {
       util.log("Socket closed");
-      if (self.shutDown === true) {
+      if (this.shutDown === true) {
         process.exit();
       } else {
         setTimeout(function () {
-          self.connect();
-        }, 5000);
+          this.connect();
+        }.bind(this), 5000);
       }
-    });
+    }.bind(this));
 
     this.socket.on("error", function (error) {
       util.log("Error " + error.name + ": " + error.message);
@@ -93,11 +95,10 @@ class Moo {
   connect() {
     util.log("Connecting");
     if (this.firstConnect) {
-      var self = this;
       this.socket.setTimeout(this.config.silenceTimeout * 1000, function () {
         util.log("Silence timeout hit, destroying socket");
-        self.socket.destroy();
-      });
+        this.socket.destroy();
+      }.bind(this));
       this.firstConnect = false;
     }
 
@@ -111,6 +112,10 @@ class Moo {
     this.quitCommand();
   }
 
+  /**
+   * Write raw data to socket
+   * @param {string} data
+   */
   raw(data) {
     this.socket.write(data, "utf8", function () {
       util.log("-> " + data.trim());
@@ -124,6 +129,9 @@ class Moo {
     }
   }
 
+  /**
+   * @returns {number|boolean}
+   */
   checkLines() {
     var lineBreak = this.incomingData.indexOf("\n");
     //util.log("Line break: " + lineBreak);
@@ -134,6 +142,10 @@ class Moo {
     return false;
   }
 
+  /**
+   * Get line from incomingData buffer or false if no data
+   * @returns {string|boolean}
+   */
   getLine() {
     if (this.checkLines() === false) {
       return false;
@@ -157,18 +169,24 @@ class Moo {
 
   ghostNick() {
     this.privmsgCommand(this.config.nickserv, "ghost " + this.config.nick + " " + this.config.nickservPassword);
-    var self = this;
     setTimeout(function () {
-      self.nickCommand(self.config.nick);
-    }, 1000);
+      this.nickCommand(this.config.nick);
+    }.bind(this), 1000);
   }
 
   // Commands
+  /**
+   * Change nick
+   * @param {string} nick
+   */
   nickCommand(nick) {
     this.raw("NICK " + nick + "\n");
     this.currentNick = nick;
   }
 
+  /**
+   * Identify yourself to the server
+   */
   userCommand() {
     this.raw("USER " + this.config.ident + " 0 * :" + this.config.ircRealName + "\n");
   }
@@ -181,34 +199,60 @@ class Moo {
     this.raw("PONG\n");
   }
 
+  /**
+   * Join a channel
+   * @param {string} channel
+   * @param {string} [key]
+   */
   joinCommand(channel, key) {
     this.raw("JOIN " + channel + ((key !== undefined) ? " " + key : "") + "\n");
   }
 
+  /**
+   * Send a message
+   * @param {string} to
+   * @param {string} msg
+   */
   privmsgCommand(to, msg) {
-    var self = this;
     var lines = msg.trim().split("\n");
     lines.forEach(function (line) {
-      self.raw("PRIVMSG " + to + " :" + line + "\n");
+      this.raw("PRIVMSG " + to + " :" + line + "\n");
 
-      self.logEvent({
+      this.logEvent({
         target: to,
-        nick: self.config.nick,
-        userhost: (self.nameList.list[self.currentNick] !== undefined ? self.nameList.list[self.currentNick].mask : null),
+        nick: this.config.nick,
+        userhost: (this.nameList.list[this.currentNick] !== undefined ? this.nameList.list[this.currentNick].mask : null),
         act: "PRIVMSG",
         text: line
       });
-    });
+    }.bind(this));
   }
 
+  /**
+   * Send a notice
+   * @param {string} to
+   * @param {string} msg
+   */
   noticeCommand(to, msg) {
     this.raw("NOTICE " + to + " :" + msg + "\n");
   }
 
+  /**
+   * Kick a user
+   * @param {string} where
+   * @param {string} who
+   * @param {string} [msg]
+   */
   kickCommand(where, who, msg) {
     this.raw("KICK " + where + " " + who + ((msg !== undefined) ? " :" + msg : ""));
   }
 
+  /**
+   * Ban or unban an user
+   * @param {string} where
+   * @param {string} who
+   * @param {boolean} [ban=true]
+   */
   banCommand(where, who, ban) {
     if (ban === undefined) {
       ban = true;
@@ -217,14 +261,31 @@ class Moo {
     this.raw("MODE " + where + " " + (ban ? "+b" : "-b") + " " + who + "\n");
   }
 
+  /**
+   * Send a WHOIS command about an user
+   * @param {string} who
+   */
   whoisCommand(who) {
     this.raw("WHOIS " + who + "\n");
   }
 
+  /**
+   * Send a WHO command
+   * @param {string} what
+   */
   whoCommand(what) {
     this.raw("WHO " + what + "\n");
   }
 
+  /**
+   *
+   * @param {Object} data
+   * @param {string} data.act
+   * @param {string} [data.target]
+   * @param {string} [data.nick]
+   * @param {string} [data.userhost]
+   * @param {string} [data.text]
+   */
   logEvent(data) {
     this.mongo.logEvent(data);
   }

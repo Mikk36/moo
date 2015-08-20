@@ -9,6 +9,9 @@ var jade = require("jade");
 var path = require("path");
 
 class WebServer extends BaseModule {
+  /**
+   * @param {Moo} moo
+   */
   constructor(moo) {
     super();
     this.moo = moo;
@@ -19,6 +22,9 @@ class WebServer extends BaseModule {
     this.requestHandlers();
   }
 
+  /**
+   * Set up handlers for various URL schemes
+   */
   requestHandlers() {
     this.express.get("/robots.txt", WebServer.robotsHandler);
     this.express.get("/log", this.logHandler.bind(this));
@@ -30,15 +36,29 @@ class WebServer extends BaseModule {
     this.express.use(express.static(path.resolve(__dirname, this.__proto__.constructor.name)));
   }
 
+  /**
+   * Handle robots.txt
+   * @param {Object} req
+   * @param {Object} res
+   */
   static robotsHandler(req, res) {
     res.send("User-agent: *\nDisallow: /")
   }
 
+  /**
+   * Handle knowledge
+   * @param {Object} req
+   * @param {Object} res
+   */
   knowledgeHandler(req, res) {
-    var self = this;
-    this.db.getKnowledge().then(WebServer.knowledgeResponder.bind(self, res));
+    this.db.getKnowledge().then(WebServer.knowledgeResponder.bind(this, res));
   }
 
+  /**
+   * Send a response for knowledge
+   * @param {Object} res
+   * @param {Object[]} data
+   */
   static knowledgeResponder(res, data) {
     data.forEach(function (row) {
       row.answer = escape(row.answer);
@@ -47,11 +67,17 @@ class WebServer extends BaseModule {
       linkify: WebServer.linkify,
       data: data
     };
+    //noinspection JSCheckFunctionSignatures
     var jadeFunc = jade.compileFile(path.resolve(__dirname, this.__proto__.constructor.name + "/knowledge.jade"), {pretty: true});
     var html = jadeFunc(locals);
     res.send(html);
   }
 
+  /**
+   * Handle log requests
+   * @param {Object} req
+   * @param {Object} res
+   */
   logHandler(req, res) {
     var self = this;
     var count = 100;
@@ -68,6 +94,11 @@ class WebServer extends BaseModule {
     this.db.getLogs(count).then(WebServer.logResponder.bind(self, res));
   }
 
+  /**
+   * Respond with a log
+   * @param {Object} res
+   * @param {Object[]} data
+   */
   static logResponder(res, data) {
 
     data.forEach(function (row) {
@@ -91,6 +122,9 @@ class WebServer extends BaseModule {
     res.send(html);
   }
 
+  /**
+   * Start listening
+   */
   listen() {
     var server = this.express.listen(this.config.httpPort, function () {
       var host = server.address().address;
@@ -100,6 +134,11 @@ class WebServer extends BaseModule {
     this.server = server;
   }
 
+  /**
+   * Find and create links from a text
+   * @param {string} input
+   * @returns {string}
+   */
   static linkify(input) {
     var url_pattern = /(\()((?:ht|f)tps?:\/\/[a-zõüäö0-9\-._~!$&'()*+,;=:\/?#[\]@%]+)(\))|(\[)((?:ht|f)tps?:\/\/[a-zõüäö0-9\-._~!$&'()*+,;=:\/?#[\]@%]+)(\])|(\{)((?:ht|f)tps?:\/\/[a-zõüäö0-9\-._~!$&'()*+,;=:\/?#[\]@%]+)(\})|(<|&(?:lt|#60|#x3c);)((?:ht|f)tps?:\/\/[a-zõüäö0-9\-._~!$&'()*+,;=:\/?#[\]@%]+)(>|&(?:gt|#62|#x3e);)|((?:^|[^=\s'"\]])\s*['"]?|[^=\s]\s+)(\b(?:ht|f)tps?:\/\/[a-zõüäö0-9\-._~!$'()*+,;=:\/?#[\]@%]+(?:(?!&(?:gt|#0*62|#x0*3e);|&(?:amp|apos|quot|#0*3[49]|#x0*2[27]);[.!&',:?;]?(?:[^a-zõüäö0-9\-._~!$&'()*+,;=:\/?#[\]@%]|$))&[a-zõüäö0-9\-._~!$'()*+,;=:\/?#[\]@%]*)*[a-zõüäö0-9\-_~$()*+=\/#[\]@%])/img;
     //noinspection HtmlUnknownTarget

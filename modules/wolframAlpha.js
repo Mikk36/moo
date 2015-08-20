@@ -9,6 +9,9 @@ var BaseModule = require("./baseModule");
 var Wolfram = false;
 
 class WolframAlpha extends BaseModule {
+  /**
+   * @param {Moo} moo
+   */
   constructor(moo) {
     super();
     this.moo = moo;
@@ -18,6 +21,9 @@ class WolframAlpha extends BaseModule {
     this.moo.parser.on("privMsg", this.messageHandler.bind(this));
   }
 
+  /**
+   * @param {Object} lineVars
+   */
   messageHandler(lineVars) {
     var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
     var input = WolframAlpha.explode(lineVars.text, " ", 2);
@@ -27,6 +33,11 @@ class WolframAlpha extends BaseModule {
     }
   }
 
+  /**
+   * @param {string} to
+   * @param {Error} err
+   * @param {Object} result
+   */
   wolframResponseHandler(to, err, result) {
     if (err) {
       this.moo.privmsgCommand(to, err);

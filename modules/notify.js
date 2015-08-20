@@ -7,6 +7,9 @@ var Moment = require('moment');
 Moment.locale("et");
 
 class Notify extends BaseModule {
+  /**
+   * @param {Moo} moo
+   */
   constructor(moo) {
     super();
     this.moo = moo;
@@ -17,6 +20,9 @@ class Notify extends BaseModule {
     this.moo.parser.on("message", this.reminderHandler.bind(this));
   }
 
+  /**
+   * @param {Object} lineVars
+   */
   messageHandler(lineVars) {
     var input = Notify.explode(lineVars.text, " ", 3);
 
@@ -31,8 +37,10 @@ class Notify extends BaseModule {
     }
   }
 
+  /**
+   * @param {Object} lineVars
+   */
   reminderHandler(lineVars) {
-    var self = this;
     if (lineVars.cmd === "PRIVMSG" || "JOIN" || "NICK") {
       var from = lineVars.fromNick;
       if (lineVars.cmd === "NICK") {
@@ -41,9 +49,9 @@ class Notify extends BaseModule {
       this.db.getNotifications(from).then(function (data) {
         var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : from);
         data.forEach(function (notification) {
-          self.moo.privmsgCommand(to, notification.to + ": " + Moment(notification.time).fromNow() + " <" + notification.from + "> " + notification.message);
+          this.moo.privmsgCommand(to, notification.to + ": " + Moment(notification.time).fromNow() + " <" + notification.from + "> " + notification.message);
         });
-      });
+      }.bind(this));
     }
   }
 }

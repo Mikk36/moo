@@ -7,6 +7,9 @@ var events = require("events");
 var util = require("util");
 
 class MessageParser {
+  /**
+   * @param {Moo} moo
+   */
   constructor(moo) {
     events.EventEmitter.call(this);
     this.moo = moo;
@@ -15,6 +18,10 @@ class MessageParser {
     this.config = this.moo.config;
   }
 
+  /**
+   * Process a line from the server
+   * @param {string} rawLine
+   */
   processLine(rawLine) {
 
     util.log("<- " + rawLine);
@@ -66,6 +73,9 @@ class MessageParser {
     }
   }
 
+  /**
+   * Parse a server (numeric) message
+   */
   parseServerMessage() {
     var cmd = parseInt(this.lineVars.cmd, 10);
     switch (cmd) {
@@ -74,10 +84,9 @@ class MessageParser {
         break;
       case 376: // RPL_ENDOFMOTD
         this.moo.authenticate();
-        var self = this;
         setTimeout(function () {
-          self.moo.joinCommand(self.config.ircChannel);
-        }, 1000);
+          this.moo.joinCommand(this.config.ircChannel);
+        }.bind(this), 1000);
         break;
       case 433: // ERR_NICKNAMEINUSE
       case 436: // ERR_NICKCOLLISION
@@ -118,6 +127,9 @@ class MessageParser {
     }
   }
 
+  /**
+   * Parse a normal message
+   */
   parseMessage() {
     switch (this.lineVars.cmd) {
       case "PING":
@@ -265,6 +277,11 @@ class MessageParser {
     }
   }
 
+  /**
+   * Check if a variable is numeric
+   * @param {number|string} mixed_var
+   * @returns {boolean}
+   */
   static is_numeric(mixed_var) {
     return (typeof(mixed_var) === "number" || typeof(mixed_var) === "string") && mixed_var !== "" && !isNaN(mixed_var);
   }

@@ -9,15 +9,25 @@ class NameList {
     this.complete = true;
   }
 
+  /**
+   * Mark the list as being empty
+   */
   initializeList() {
     this.complete = false;
     this.list = {};
   }
 
+  /**
+   * Mark the list as having been completed
+   */
   completeList() {
     this.complete = true;
   }
 
+  /**
+   * Add an entry to the list
+   * @param {string} line - Raw line from the server
+   */
   populate(line) {
     if (this.complete) {
       this.initializeList();
@@ -42,6 +52,12 @@ class NameList {
     }
   }
 
+  /**
+   * Add a nick to the list
+   * @param {string} nick
+   * @param {string} ident
+   * @param {string} host
+   */
   addNick(nick, ident, host) {
     this.list[nick] = {
       mask: ident + "@" + host,
@@ -49,24 +65,49 @@ class NameList {
     };
   }
 
+  /**
+   * Remove a nick from the list
+   * @param {string} nick
+   */
   removeNick(nick) {
     delete this.list[nick];
   }
 
+  /**
+   * Change a nick in the list to a new one
+   * @param {string} nick
+   * @param {string} newNick
+   */
   changeNick(nick, newNick) {
     var oldData = this.list[nick];
     delete this.list[nick];
     this.list[newNick] = oldData;
   }
 
+  /**
+   * Check if a user has a specific mode
+   * @param {nick} nick
+   * @param {string} mode
+   * @returns {boolean}
+   */
   hasMode(nick, mode) {
     return this.list[nick].mode.indexOf(mode) !== -1;
   }
 
+  /**
+   * Add a mode to an user
+   * @param {string} nick
+   * @param {string} mode
+   */
   addMode(nick, mode) {
     this.list[nick].mode.push(mode);
   }
 
+  /**
+   * Remove a mode from an user
+   * @param {string} nick
+   * @param {string} mode
+   */
   removeMode(nick, mode) {
     var index = this.list[nick].mode.indexOf(mode);
     this.list[nick].mode.splice(index, 1);

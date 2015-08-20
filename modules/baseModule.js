@@ -3,6 +3,13 @@
  */
 
 class BaseModule {
+  /**
+   * Explode a string with a limit
+   * @param {string} input
+   * @param {string} delimiter
+   * @param {number} [limit]
+   * @returns {string[]}
+   */
   static explode(input, delimiter, limit) {
     var s = input.split(delimiter);
     if (limit > 0) {
@@ -14,6 +21,11 @@ class BaseModule {
     return s;
   }
 
+  /**
+   * Pad a string with zeroes so it has at least a length of two
+   * @param {string} input
+   * @returns {string}
+   */
   static pad(input) {
     input = input.toString();
     if (input.length < 2) {
