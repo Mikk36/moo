@@ -3,6 +3,7 @@
 
  @author Mikk Kiilaspää <mikk36@mikk36.eu>
  */
+"use strict";
 var util = require("util");
 var BaseModule = require("./baseModule");
 
@@ -51,16 +52,16 @@ class Knowledge extends BaseModule {
    * @returns {Promise}
    */
   getAnswer(question) {
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
       if (this.db === undefined) {
         reject("DB not available");
       } else {
-        this.db.collection(this.config.knowledgeCollection, function (err, collection) {
+        this.db.collection(this.config.knowledgeCollection, (err, collection) => {
           if (err) {
             reject(err);
             return;
           }
-          collection.findOne({question: question}).then(function (document) {
+          collection.findOne({question: question}).then((document) => {
             if (document) {
               resolve(document.answer);
             } else {
@@ -69,7 +70,7 @@ class Knowledge extends BaseModule {
           });
         });
       }
-    }.bind(this));
+    });
   }
 
   /**
@@ -80,25 +81,25 @@ class Knowledge extends BaseModule {
    */
   setAnswer(question, answer) {
     // TODO: instead of quitting, store for later attempt
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
       if (this.db === undefined) {
         reject();
       } else {
-        this.db.collection(this.config.knowledgeCollection, function (err, collection) {
+        this.db.collection(this.config.knowledgeCollection, (err, collection) => {
           collection.updateOne({question: question}, {
             question: question,
             answer: answer,
             modified: new Date()
           }, {
             upsert: true
-          }).then(function (result) {
+          }).then((result) => {
             resolve(result);
-          }).catch(function (err) {
+          }).catch((err) => {
             reject(err);
           });
         });
       }
-    }.bind(this));
+    });
 
   }
 
@@ -109,13 +110,13 @@ class Knowledge extends BaseModule {
    */
   removeAnswer(question) {
     // TODO: instead of quitting, store for later attempt
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
       if (this.db === undefined) {
         reject();
       } else {
-        this.db.collection(this.config.knowledgeCollection, function (err, collection) {
+        this.db.collection(this.config.knowledgeCollection, (err, collection) => {
           //noinspection JSCheckFunctionSignatures
-          collection.deleteMany({question: question}).then(function (result) {
+          collection.deleteMany({question: question}).then((result) => {
             if (result.deletedCount < 1) {
               reject("None removed");
             } else {
@@ -124,7 +125,7 @@ class Knowledge extends BaseModule {
           });
         });
       }
-    }.bind(this));
+    });
   }
 
   /**
@@ -138,41 +139,41 @@ class Knowledge extends BaseModule {
         if (!this.commandCheck(to, line.fromNick, input, 3)) {
           break;
         }
-        this.setAnswer(input[1], input[2]).then(function () {
+        this.setAnswer(input[1], input[2]).then(() => {
           this.respondLearn(to);
-        }.bind(this));
+        });
         break;
       case "!forget":
         if (!this.commandCheck(to, line.fromNick, input, 2)) {
           break;
         }
-        this.removeAnswer(input[1]).then(function () {
+        this.removeAnswer(input[1]).then(() => {
           this.respondForget(to);
-        }.bind(this), function () {
+        }, () => {
           this.respondForgetFail(to);
-        }.bind(this));
+        });
         break;
       case "!append":
         if (!this.commandCheck(to, line.fromNick, input, 3)) {
           break;
         }
         this.getAnswer(input[1]).then(
-          function (answer) {
+          (answer) => {
             return this.setAnswer(input[1], answer + " | " + input[2])
-          }.bind(this), function () {
+          }, () => {
             this.respondForgetFail(to);
-          }.bind(this)
+          }
         ).then(
-          function () {
+          () => {
             this.respondLearn(to);
-          }.bind(this)
+          }
         );
         break;
       default:
         if (input.length === 1 && input[0].charAt(input[0].length - 1) === "?") {
-          this.getAnswer(input[0].substr(0, input[0].length - 1)).then(function (answer) {
+          this.getAnswer(input[0].substr(0, input[0].length - 1)).then((answer) => {
             this.moo.privmsgCommand(to, answer);
-          }.bind(this), function (error) {
+          }, (error) => {
             util.log(error);
           });
         }

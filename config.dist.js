@@ -1,8 +1,8 @@
 /*
-  Configuration
+ Configuration
 
  @author Mikk Kiilaspää <mikk36@mikk36.eu>
-*/
+ */
 
 var config = {
   nick:                 "nickname",

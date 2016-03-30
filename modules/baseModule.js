@@ -1,6 +1,7 @@
 /**
  * Created by Mikk on 4.07.2015.
  */
+"use strict";
 
 class BaseModule {
   /**

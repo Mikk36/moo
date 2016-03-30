@@ -1,6 +1,7 @@
 /**
  * Created by Mikk on 20.08.2015.
  */
+"use strict";
 var util = require("util");
 var BaseModule = require("./baseModule");
 var Moment = require('moment');
@@ -33,11 +34,11 @@ class Seen extends BaseModule {
    * @returns {Promise}
    */
   getLastMessage(nick) {
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
       if (this.db === undefined) {
         reject("DB not available");
       } else {
-        this.db.collection(this.config.logCollection, function (err, collection) {
+        this.db.collection(this.config.logCollection, (err, collection) => {
           if (err) {
             reject(err);
             return;
@@ -49,7 +50,7 @@ class Seen extends BaseModule {
             sort: {
               _id: -1
             }
-          }).then(function (document) {
+          }).then((document) => {
             if (document) {
               resolve(document);
             } else {
@@ -58,7 +59,7 @@ class Seen extends BaseModule {
           });
         });
       }
-    }.bind(this));
+    });
   }
 
   /**
@@ -69,11 +70,11 @@ class Seen extends BaseModule {
     var input = Seen.explode(lineVars.text, " ", 2);
 
     if (input[0] === "!seen") {
-      this.getLastMessage(input[1]).then(function (document) {
+      this.getLastMessage(input[1]).then((document) => {
         this.moo.privmsgCommand(to, document.nick + " oli viimati näha " + document.target + " kanalis " + Moment(document.time).fromNow() + ", kui ta ütles \"" + document.text + "\"");
-      }.bind(this)).catch(function () {
+      }).catch(() => {
         this.moo.privmsgCommand(to, "Ei leidnud midagi kasutaja " + input[1] + " kohta");
-      }.bind(this));
+      });
     }
   }
 }

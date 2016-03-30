@@ -3,6 +3,7 @@
 
  @author Mikk Kiilaspää <mikk36@mikk36.eu>
  */
+"use strict";
 var util = require("util");
 var https = require("https");
 var BaseModule = require("./baseModule");
@@ -33,12 +34,12 @@ class Bing extends BaseModule {
         auth: this.config.bingAuth + ":" + this.config.bingAuth
       };
 
-      https.get(options, function (res) {
+      https.get(options, (res) => {
         var body = '';
-        res.on("data", function (chunk) {
+        res.on("data", (chunk) => {
           body += chunk;
         });
-        res.on("end", function () {
+        res.on("end", () => {
           var result = JSON.parse(body);
           var resultCount = result.d.results.length;
           if (resultCount > 0) {
@@ -50,8 +51,8 @@ class Bing extends BaseModule {
               this.moo.privmsgCommand(to, item.Title + " " + item.Url);
             }
           }
-        }.bind(this));
-      }.bind(this));
+        });
+      });
     }
   }
 }

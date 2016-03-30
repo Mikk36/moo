@@ -1,6 +1,7 @@
 /**
  * Created by Mikk on 5.07.2015.
  */
+"use strict";
 
 var BaseModule = require("./baseModule");
 var Moment = require('moment');
@@ -46,12 +47,12 @@ class Notify extends BaseModule {
       if (lineVars.cmd === "NICK") {
         from = lineVars.text;
       }
-      this.db.getNotifications(from).then(function (data) {
+      this.db.getNotifications(from).then((data) => {
         var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : from);
-        data.forEach(function (notification) {
+        data.forEach((notification) => {
           this.moo.privmsgCommand(to, notification.to + ": " + Moment(notification.time).fromNow() + " <" + notification.from + "> " + notification.message);
-        }.bind(this));
-      }.bind(this));
+        });
+      });
     }
   }
 }

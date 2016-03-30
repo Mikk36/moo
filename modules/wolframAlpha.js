@@ -3,6 +3,7 @@
 
  @author Mikk Kiilaspää <mikk36@mikk36.eu>
  */
+"use strict";
 var util = require("util");
 var Client = require("node-wolfram");
 var BaseModule = require("./baseModule");

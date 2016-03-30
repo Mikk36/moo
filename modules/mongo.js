@@ -1,21 +1,28 @@
 /**
  * Created by Mikk on 4.07.2015.
  */
+"use strict";
 var util = require("util");
 var events = require("events");
 var mongo = require("mongodb");
 var MongoClient = mongo.MongoClient;
 var ObjectID = mongo.ObjectID;
 
-class Mongo {
+class Mongo extends events.EventEmitter {
   /**
    * @param {Moo} moo
    */
   constructor(moo) {
-    events.EventEmitter.call(this);
+    super();
     this.moo = moo;
     this.config = this.moo.config;
-    MongoClient.connect(this.config.mongoDB, function (error, db) {
+    MongoClient.connect(this.config.mongoDB, {
+      server: {
+        socketOptions: {
+          socketTimeoutMS: 20000
+        }
+      }
+    }, (error, db) => {
       if (error) {
         util.log("Error connecting to MongoDB: " + error.message);
         return;
@@ -24,22 +31,31 @@ class Mongo {
       this.db = db;
       this.createMongoListeners();
       this.emit("connected", db);
-    }.bind(this));
+    });
   }
 
   createMongoListeners() {
-    this.db.on("error", function (error) {
+    this.db.on("error", (error) => {
       util.log("MongoDB error: " + error.message);
+      this.moo.privmsgCommand("Mikk36", "MongoDB: " + error.message);
     });
-    this.db.on("reconnect", function () {
+    this.db.on("reconnect", () => {
       util.log("MongoDB reconnected");
+      this.moo.privmsgCommand("Mikk36", "MongoDB: reconnected");
     });
-    this.db.on("timeout", function () {
+    this.db.on("timeout", () => {
       util.log("MongoDB timeout");
+      this.moo.privmsgCommand("Mikk36", "MongoDB: timeout");
     });
-    this.db.on("close", function () {
+    this.db.on("close", () => {
       util.log("MongoDB closed");
+      this.moo.privmsgCommand("Mikk36", "MongoDB: closed");
     });
+    this.heartBeat = setInterval(this.heartBeat.bind(this), 10000)
+  }
+
+  heartBeat() {
+    this.db.stats();
   }
 
   /**
@@ -86,7 +102,7 @@ class Mongo {
    * @returns {Promise}
    */
   getKnowledge() {
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
       var collection = this.db.collection(this.config.knowledgeCollection);
       collection.aggregate([
         {
@@ -99,7 +115,7 @@ class Mongo {
         {
           $sort: {insensitive: 1}
         }
-      ]).toArray(function (err, documents) {
+      ]).toArray((err, documents) => {
         if (err) {
           util.log("Error: " + err);
           reject(err);
@@ -107,7 +123,7 @@ class Mongo {
           resolve(documents);
         }
       });
-    }.bind(this));
+    });
   }
 
   /**
@@ -119,7 +135,7 @@ class Mongo {
     var collection = this.db.collection(this.config.logCollection);
     var objectId = new ObjectID(id);
     var parallel = [];
-    parallel.push(new Promise(function (resolve, reject) {
+    parallel.push(new Promise((resolve, reject) => {
       collection.find({
         $or: [
           {target: this.config.ircChannel},
@@ -130,15 +146,15 @@ class Mongo {
           {act: {$ne: "333"}}
         ],
         _id: {$lte: objectId}
-      }).sort({_id: -1}).limit(6).toArray(function (err, documents) {
+      }).sort({_id: -1}).limit(6).toArray((err, documents) => {
         if (err) {
           reject(err);
           return;
         }
         resolve(documents);
       });
-    }.bind(this)));
-    parallel.push(new Promise(function (resolve, reject) {
+    }));
+    parallel.push(new Promise((resolve, reject) => {
       collection.find({
         $or: [
           {target: this.config.ircChannel},
@@ -149,20 +165,20 @@ class Mongo {
           {act: {$ne: "333"}}
         ],
         _id: {$gt: objectId}
-      }).sort({_id: 1}).limit(5).toArray(function (err, documents) {
+      }).sort({_id: 1}).limit(5).toArray((err, documents) => {
         if (err) {
           reject(err);
           return;
         }
         resolve(documents);
       });
-    }.bind(this)));
-    return new Promise(function (resolve, reject) {
-      Promise.all(parallel).then(function (results) {
+    }));
+    return new Promise((resolve, reject) => {
+      Promise.all(parallel).then((results) => {
         var documents = [].concat.apply([], results);
         var sortedDocuments = documents.sort(Mongo.logSorter);
         resolve(sortedDocuments);
-      }).catch(function (error) {
+      }).catch((error) => {
         reject(error);
       });
     });
@@ -184,7 +200,7 @@ class Mongo {
       count = 5000;
     }
 
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
       var collection = this.db.collection(this.config.logCollection);
 
       collection.find({
@@ -196,7 +212,7 @@ class Mongo {
           {act: {$ne: "332"}},
           {act: {$ne: "333"}}
         ]
-      }).sort({_id: -1}).limit(count).toArray(function (err, documents) {
+      }).sort({_id: -1}).limit(count).toArray((err, documents) => {
         if (err) {
           util.log("Error: " + err);
           reject(err);
@@ -209,7 +225,7 @@ class Mongo {
           }
         }
       });
-    }.bind(this));
+    });
   }
 
   /**
@@ -237,13 +253,13 @@ class Mongo {
    * @returns {Promise}
    */
   getNotifications(nick) {
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
       var collection = this.db.collection(this.config.notifyCollection);
       //noinspection JSDeprecatedSymbols,JSCheckFunctionSignatures
       collection.find({
         toInsensitive: nick.toLowerCase(),
         processed: false
-      }).sort({time: 1}).toArray(function (err, documents) {
+      }).sort({time: 1}).toArray((err, documents) => {
         if (err) {
           util.log("Error: " + err);
           reject(err);
@@ -251,7 +267,7 @@ class Mongo {
           if (documents.length === 0) {
             reject("No unprocessed notifications found");
           } else {
-            documents.forEach(function (document) {
+            documents.forEach((document) => {
               //noinspection JSDeprecatedSymbols,JSCheckFunctionSignatures
               collection.update(
                 {
@@ -267,7 +283,7 @@ class Mongo {
           }
         }
       });
-    }.bind(this));
+    });
   }
 
   /**
@@ -296,7 +312,5 @@ class Mongo {
     });
   }
 }
-
-Mongo.prototype.__proto__ = events.EventEmitter.prototype;
 
 module.exports = Mongo;

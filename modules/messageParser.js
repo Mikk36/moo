@@ -3,15 +3,16 @@
 
  @author Mikk Kiilaspää <mikk36@mikk36.eu>
  */
+"use strict";
 var events = require("events");
 var util = require("util");
 
-class MessageParser {
+class MessageParser extends events.EventEmitter{
   /**
    * @param {Moo} moo
    */
   constructor(moo) {
-    events.EventEmitter.call(this);
+    super();
     this.moo = moo;
     this.nameList = this.moo.nameList;
     this.lineVars = {};
@@ -80,13 +81,13 @@ class MessageParser {
     var cmd = parseInt(this.lineVars.cmd, 10);
     switch (cmd) {
       case 1: // I have successfully connected to the server
-              // Do nothing yet
+        // Do nothing yet
         break;
       case 376: // RPL_ENDOFMOTD
         this.moo.authenticate();
-        setTimeout(function () {
+        setTimeout(() => {
           this.moo.joinCommand(this.config.ircChannel);
-        }.bind(this), 1000);
+        }, 1000);
         break;
       case 433: // ERR_NICKNAMEINUSE
       case 436: // ERR_NICKCOLLISION
@@ -287,7 +288,5 @@ class MessageParser {
   }
 
 }
-
-MessageParser.prototype.__proto__ = events.EventEmitter.prototype;
 
 module.exports = MessageParser;

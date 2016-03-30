@@ -3,6 +3,7 @@
 
  @author Mikk Kiilaspää <mikk36@mikk36.eu>
  */
+"use strict";
 var http = require("http");
 var entities = require("entities");
 var BaseModule = require("./baseModule");
@@ -26,12 +27,12 @@ class Google extends BaseModule {
 
     if (input[0] === "!google") {
       var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
-      http.get("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&hl=et&userip=" + this.moo.config.googleUserIP + "&rsz=3&q=" + encodeURIComponent(input[1]), function (res) {
+      http.get("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&hl=et&userip=" + this.moo.config.googleUserIP + "&rsz=3&q=" + encodeURIComponent(input[1]), (res) => {
         var body = '';
-        res.on("data", function (chunk) {
+        res.on("data", (chunk) => {
           body += chunk;
         });
-        res.on("end", function () {
+        res.on("end", () => {
           var result = JSON.parse(body);
 
           var resultCount = result.responseData.results.length;
@@ -47,8 +48,8 @@ class Google extends BaseModule {
             }
             this.moo.privmsgCommand(to, result.responseData.cursor.moreResultsUrl + " Estimated results: " + result.responseData.cursor.estimatedResultCount);
           }
-        }.bind(this));
-      }.bind(this));
+        });
+      });
     }
   }
 }

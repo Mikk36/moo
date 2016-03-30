@@ -1,6 +1,7 @@
 /**
  * Created by Mikk on 12.07.2015.
  */
+"use strict";
 var util = require("util");
 var escape = require("escape-html");
 var BaseModule = require("./baseModule");
@@ -60,7 +61,7 @@ class WebServer extends BaseModule {
    * @param {Object[]} data
    */
   static knowledgeResponder(res, data) {
-    data.forEach(function (row) {
+    data.forEach((row) => {
       row.answer = escape(row.answer);
     });
     var locals = {
@@ -101,7 +102,7 @@ class WebServer extends BaseModule {
    */
   static logResponder(res, data) {
 
-    data.forEach(function (row) {
+    data.forEach((row) => {
       if (row.text !== undefined) {
         row.escapedText = escape(row.text);
       }
@@ -126,7 +127,7 @@ class WebServer extends BaseModule {
    * Start listening
    */
   listen() {
-    var server = this.express.listen(this.config.httpPort, function () {
+    var server = this.express.listen(this.config.httpPort, () => {
       var host = server.address().address;
       var port = server.address().port;
       util.log("Webserver listening at http://%s:%s", host, port);

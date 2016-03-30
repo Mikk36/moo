@@ -3,6 +3,7 @@
 
  @author Mikk Kiilaspää <mikk36@mikk36.eu>
  */
+"use strict";
 
 var util = require("util");
 var iconv = require("iconv-lite");
@@ -54,40 +55,40 @@ class Moo {
 
   createSocketListeners() {
     // Connection established
-    this.socket.on("connect", function () {
+    this.socket.on("connect", () => {
       util.log("Connected");
-      setTimeout(function () {
+      setTimeout(() => {
         util.log("Setting nick");
         this.nickCommand(this.config.nick);
         util.log("Setting user");
         this.userCommand();
-      }.bind(this), 1000);
-    }.bind(this));
+      }, 1000);
+    });
 
     // Incoming data!
-    this.socket.on("data", function (data) {
+    this.socket.on("data", (data) => {
       var data_ = data.toString();
       if (data_.indexOf("\uFFFD") !== -1) {
         data_ = iconv.decode(data, "iso885913");
       }
       this.incomingData += data_;
       this.processData();
-    }.bind(this));
+    });
 
-    this.socket.on("timeout", function () {
+    this.socket.on("timeout", () => {
       this.socket.destroy();
-    }.bind(this));
+    });
 
-    this.socket.on("close", function () {
+    this.socket.on("close", () => {
       util.log("Socket closed");
       if (this.shutDown === true) {
         process.exit();
       } else {
-        setTimeout(function () {
+        setTimeout(() => {
           this.connect();
-        }.bind(this), 5000);
+        }, 5000);
       }
-    }.bind(this));
+    });
 
     this.socket.on("error", function (error) {
       util.log("Error " + error.name + ": " + error.message);
@@ -97,10 +98,10 @@ class Moo {
   connect() {
     util.log("Connecting");
     if (this.firstConnect) {
-      this.socket.setTimeout(this.config.silenceTimeout * 1000, function () {
+      this.socket.setTimeout(this.config.silenceTimeout * 1000, () => {
         util.log("Silence timeout hit, destroying socket");
         this.socket.destroy();
-      }.bind(this));
+      });
       this.firstConnect = false;
     }
 
@@ -171,9 +172,9 @@ class Moo {
 
   ghostNick() {
     this.privmsgCommand(this.config.nickserv, "ghost " + this.config.nick + " " + this.config.nickservPassword);
-    setTimeout(function () {
+    setTimeout(() => {
       this.nickCommand(this.config.nick);
-    }.bind(this), 1000);
+    }, 1000);
   }
 
   // Commands
@@ -217,7 +218,7 @@ class Moo {
    */
   privmsgCommand(to, msg) {
     var lines = msg.trim().split("\n");
-    lines.forEach(function (line) {
+    lines.forEach((line) => {
       this.raw("PRIVMSG " + to + " :" + line + "\n");
 
       this.logEvent({
@@ -227,7 +228,7 @@ class Moo {
         act: "PRIVMSG",
         text: line
       });
-    }.bind(this));
+    });
   }
 
   /**

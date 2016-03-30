@@ -1,6 +1,7 @@
 /**
  * Created by Mikk on 1.08.2015.
  */
+"use strict";
 var util = require("util");
 
 class NameList {

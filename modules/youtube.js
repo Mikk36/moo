@@ -3,6 +3,7 @@
 
  @author Mikk Kiilaspää <mikk36@mikk36.eu>
  */
+"use strict";
 var https = require("https");
 
 class Youtube {
@@ -27,12 +28,12 @@ class Youtube {
           matchedID = matches2[0]
         }
         https.get("https://www.googleapis.com/youtube/v3/videos?part=id,snippet,contentDetails&id="
-          + matchedID + "&key=" + this.moo.config.googleAuth, function (res) {
+          + matchedID + "&key=" + this.moo.config.googleAuth, (res) => {
           var body = "";
-          res.on("data", function (chunk) {
+          res.on("data", (chunk) => {
             body += chunk;
           });
-          res.on("end", function () {
+          res.on("end", () => {
             var result = JSON.parse(body);
             var message = "";
             var to = (lineVars.to.charAt(0) === "#" ? lineVars.to : lineVars.fromNick);
@@ -48,8 +49,8 @@ class Youtube {
               }
             }
             this.moo.privmsgCommand(to, message);
-          }.bind(this));
-        }.bind(this));
+          });
+        });
       }
     }
   }
