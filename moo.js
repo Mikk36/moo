@@ -90,7 +90,7 @@ class Moo {
       }
     });
 
-    this.socket.on("error", function (error) {
+    this.socket.on("error", (error) => {
       util.log("Error " + error.name + ": " + error.message);
     });
   }
@@ -120,7 +120,7 @@ class Moo {
    * @param {string} data
    */
   raw(data) {
-    this.socket.write(data, "utf8", function () {
+    this.socket.write(data, "utf8", () => {
       util.log("-> " + data.trim());
     });
   }
