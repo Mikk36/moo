@@ -55,7 +55,13 @@ class Mongo extends events.EventEmitter {
   }
 
   heartBeat() {
-    this.db.stats();
+    this.db.stats((e, stats) => {
+      if (e !== null) {
+        console.error("MongoDB stats error:", e);
+        return;
+      }
+      //console.info("Stats:", stats);
+    });
   }
 
   /**
