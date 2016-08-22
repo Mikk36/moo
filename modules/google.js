@@ -34,7 +34,10 @@ class Google extends BaseModule {
         });
         res.on("end", () => {
           var result = JSON.parse(body);
-
+          if (result.responseData == null) {
+            this.moo.privmsgCommand(to, "No valid response from Google");
+            return;
+          }
           var resultCount = result.responseData.results.length;
           if (resultCount === 0) {
             this.moo.privmsgCommand(to, result.responseData.cursor.moreResultsUrl);
